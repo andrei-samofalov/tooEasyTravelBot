@@ -1,27 +1,26 @@
 from settings import TOKEN
-from aiogram import Bot, Dispatcher, executor, types
+from telebot import TeleBot
 
-bot = Bot(TOKEN)
-dp = Dispatcher(bot)
-
-
-@dp.message_handler(commands=['start'])
-async def start(message):
-    await message.answer('Привет! Наберите команду /hello_world')
+bot = TeleBot(TOKEN)
 
 
-@dp.message_handler(commands=['hello_world'])
-async def hello_world(message):
-    await message.answer('Hello World')
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(message.chat.id, 'Привет! Наберите команду /hello_world')
 
 
-@dp.message_handler(content_types=['text'])
-async def incoming_messages(message):
+@bot.message_handler(commands=['hello_world'])
+def hello_world(message):
+    bot.send_message(message.chat.id, 'Hello World')
+
+
+@bot.message_handler(content_types=['text'])
+def incoming_messages(message):
     if message.text.lower() == 'привет':
-        await message.reply('Привет тебе, путник')
+        bot.reply_to(message, 'Привет тебе, путник')
     else:
-        await message.answer('Моя твоя не понимать...')
+        bot.send_message(message.chat.id, 'Моя твоя не понимать...')
 
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    bot.polling(non_stop=True, timeout=0)
