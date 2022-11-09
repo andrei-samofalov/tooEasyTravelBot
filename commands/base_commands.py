@@ -1,5 +1,5 @@
 from telebot.types import Message
-from settings import DEFAULT_COMMANDS
+from settings.config import DEFAULT_COMMANDS
 from loader import bot
 
 
