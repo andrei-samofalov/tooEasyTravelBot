@@ -1,5 +1,4 @@
-from settings import TOKEN
-from telebot import TeleBot
+import telebot
+from settings import BOT_TOKEN
 
-bot = TeleBot(TOKEN)
-bot.polling(non_stop=True, timeout=0)
+bot = telebot.TeleBot(BOT_TOKEN)
