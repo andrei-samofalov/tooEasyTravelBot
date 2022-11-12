@@ -1,6 +1,9 @@
 import requests
 from typing import Dict
 import json
+
+import telebot
+
 from settings.config import headers, url_city, url_hotel, url_photos
 
 
@@ -67,15 +70,33 @@ def hotel_search(
         hotels = json.loads(response.text)
         hotels = hotels['data']['body']['searchResults']['results']
 
-        # hotels_dict = {}
-        # for item in hotels:
-        #     print(item)
         return hotels
 
     else:
         print(f'Ошибка {response.status_code}')
-        return None
 
-# def photo_search(hotel_id, amount):
+
+def photo_search(hotel_id, amount):
+    """
+    Запрос к API сайта для получения ссылок на фотографии
+
+    :param hotel_id: ID отеля из запроса hotel_search
+    :param amount: количество фотографий, которые необходимо выгрузить
+
+    :return: список/множество ссылок на фотографии
+    """
+
+    querystring = {"id": str(hotel_id)}
+    response = requests.request("GET", url=url_photos, headers=headers, params=querystring)
+    if response.status_code == 200:
+        photos = json.loads(response.text)
+        print(photos)
     # 'size': 'l'
-    # pass
+    pass
+
+
+def display_results(results: Dict):
+    display = []
+    for key in results.keys():
+        display.append(f'{key}: {results[key]}')
+    return '\n'.join(display)

@@ -7,6 +7,8 @@ class SurveyStates(StatesGroup):
     check_in = State()
     check_out = State()
     amount_of_suggestion = State()
+    get_photos = State()
+    amount_of_photos = State()
     sort = State()
     distance = State()
     max_price = State()
