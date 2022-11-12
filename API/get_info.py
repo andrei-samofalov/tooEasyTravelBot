@@ -5,6 +5,9 @@ from settings.config import headers, url_city, url_hotel, url_photos
 
 
 def city_search(city):
+    """
+    Запрос к API сайта для получения списка возможных совпадений по запросу города
+    """
     query = {'query': city, 'locale': 'ru_RU', 'currency': 'RUB'}
     response = requests.request(method='GET', url=url_city, headers=headers, params=query)
     if response.status_code == 200:
@@ -21,13 +24,14 @@ def city_search(city):
 
 
 def hotel_search(
-        city_id: int,
-        check_in: str,
-        check_out: str,
-        sort: str,
-        distance: int,
-        max_price: int,
-        min_price: int
+    city_id: int,
+    check_in: str,
+    check_out: str,
+    amount_of_suggestion: int = 5,
+    sort: str = 'PRICE',
+    distance: int = None,
+    max_price: int = 1000000,
+    min_price: int = 0,
 ):
     """
         Запрос к API сайта для получения списка отелей
@@ -38,23 +42,33 @@ def hotel_search(
         :param distance
         :param max_price
         :param min_price
+        :param amount_of_suggestion
 
         :return словарь с отелями
     """
-    query_ = {
-        'destinationId': city_id,
-        'pageNumber': '1',
-        'pageSize': '100',
-        'checkIn': check_in,
-        'checkOut': check_out,
-        'adults1': '1',
-        'sortOrder': sort,
-        'locale': 'ru_RU',
-        'currency': 'RUB'
+
+    querystring = {
+        "destinationId": city_id,
+        "pageNumber": "1",
+        "pageSize": amount_of_suggestion,
+        "checkIn": check_in,
+        "checkOut": check_out,
+        "adults1": "1",
+        "sortOrder": sort,
+        "locale": "ru_RU",
+        "currency": "RUB",
+        "priceMin": min_price,
+        "priceMax": max_price,
 
     }
-    pass
 
+    response = requests.request("GET", url=url_hotel, headers=headers, params=querystring)
+    if response.status_code == 200:
+        hotels = json.loads(response.text)
+        with open('hotels.json', 'w') as file:
+            json.dump(hotels, file)
+    else:
+        print(f'Ошибка {response.status_code}')
 
 # def photo_search(hotel_id, amount):
     # 'size': 'l'
