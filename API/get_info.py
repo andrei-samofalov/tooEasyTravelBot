@@ -32,7 +32,7 @@ def hotel_search(
     distance: int = None,
     max_price: int = 1000000,
     min_price: int = 0,
-):
+) -> Dict:
     """
         Запрос к API сайта для получения списка отелей
         :param city_id
@@ -61,14 +61,20 @@ def hotel_search(
         "priceMax": max_price,
 
     }
-
+    print('Запускается функция hotel_search')
     response = requests.request("GET", url=url_hotel, headers=headers, params=querystring)
     if response.status_code == 200:
         hotels = json.loads(response.text)
-        with open('hotels.json', 'w') as file:
-            json.dump(hotels, file)
+        hotels = hotels['data']['body']['searchResults']['results']
+
+        # hotels_dict = {}
+        # for item in hotels:
+        #     print(item)
+        return hotels
+
     else:
         print(f'Ошибка {response.status_code}')
+        return None
 
 # def photo_search(hotel_id, amount):
     # 'size': 'l'

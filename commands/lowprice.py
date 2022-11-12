@@ -29,6 +29,7 @@ def city_input_details(call: CallbackQuery):
 
 @bot.message_handler(state=SurveyStates.check_in)
 def city_input_details(message: Message):
+    # TODO Внедрить календарь для выбора даты
     with bot.retrieve_data(message.from_user.id) as request_dict:
         request_dict['check_in'] = message.text
     bot.send_message(message.from_user.id, 'Введите дату выезда в формате YYYY-MM-DD')
@@ -37,6 +38,7 @@ def city_input_details(message: Message):
 
 @bot.message_handler(state=SurveyStates.check_out)
 def city_input_details(message: Message):
+    # TODO Внедрить календарь для выбора даты
     with bot.retrieve_data(message.from_user.id) as request_dict:
         request_dict['check_out'] = message.text
     bot.send_message(message.from_user.id, 'Сколько выводить предложений?')
@@ -45,15 +47,23 @@ def city_input_details(message: Message):
 
 @bot.message_handler(state=SurveyStates.amount_of_suggestion)
 def city_input_details(message: Message):
-    with bot.retrieve_data(message.from_user.id) as data:
-        data['amount_of_suggestion'] = int(message.text)
-        print(data)
-        hotel_search(
-            city_id=data['destination_id'],
-            check_in=data['check_in'],
-            check_out=data['check_out'],
-            amount_of_suggestion=data['amount_of_suggestion'],
-        )
+    if message.text.isdigit():
+        with bot.retrieve_data(message.from_user.id) as data:
+            data['amount_of_suggestion'] = int(message.text)
+            bot.send_message(message.from_user.id, 'Ваш запрос в обработке...')
+            results = hotel_search(
+                city_id=data['destination_id'],
+                check_in=data['check_in'],
+                check_out=data['check_out'],
+                amount_of_suggestion=data['amount_of_suggestion'],
+            )
+        for item in results:
+            display = [item['name'], item['address']['streetAddress'], item['ratePlan']['price']['current']]
+            bot.send_message(message.from_user.id, '\n'.join(display))
 
+            # bot.send_message(message.from_user.id, )
+
+    else:
+        bot.send_message(message.from_user.id, 'Необходимо ввести целое число')
 
 
