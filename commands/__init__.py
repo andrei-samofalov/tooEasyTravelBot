@@ -2,5 +2,7 @@ from . import (
     lowprice,
     highprice,
     bestdeal,
-    history
+    history,
+    keyboards,
+    base_commands
 )
