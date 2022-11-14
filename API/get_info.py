@@ -1,6 +1,9 @@
 import requests
 from typing import Dict
 import json
+from loader import bot
+import time
+from telebot.types import Message, InputMediaPhoto
 
 import telebot
 
@@ -32,17 +35,16 @@ def hotel_search(
     check_out: str,
     amount_of_suggestion: int = 5,
     sort: str = 'PRICE',
-    distance: int = None,
     max_price: int = 1000000,
     min_price: int = 0,
 ) -> Dict:
+
     """
         Запрос к API сайта для получения списка отелей
         :param city_id
         :param check_in
         :param check_out
         :param sort
-        :param distance
         :param max_price
         :param min_price
         :param amount_of_suggestion
@@ -62,9 +64,7 @@ def hotel_search(
         "currency": "RUB",
         "priceMin": min_price,
         "priceMax": max_price,
-
     }
-    print('Запускается функция hotel_search')
     response = requests.request("GET", url=url_hotel, headers=headers, params=querystring)
     if response.status_code == 200:
         hotels = json.loads(response.text)
@@ -76,7 +76,7 @@ def hotel_search(
         print(f'Ошибка {response.status_code}')
 
 
-def photo_search(hotel_id, amount):
+def photo_search(hotel_id, amount=0):
     """
     Запрос к API сайта для получения ссылок на фотографии
 
@@ -90,13 +90,29 @@ def photo_search(hotel_id, amount):
     response = requests.request("GET", url=url_photos, headers=headers, params=querystring)
     if response.status_code == 200:
         photos = json.loads(response.text)
-        print(photos)
-    # 'size': 'l'
-    pass
+        photos_list = []
+        for photo in photos['hotelImages']:
+            photos_list.append(InputMediaPhoto(photo['baseUrl'].replace('{size}', 'w')))
+        return photos_list[:amount]
+    else:
+        print(f'Ошибка {response.status_code}')
 
 
-def display_results(results: Dict):
-    display = []
-    for key in results.keys():
-        display.append(f'{key}: {results[key]}')
-    return '\n'.join(display)
+def display_results(user_id: int, amount_of_photos):
+    with bot.retrieve_data(user_id) as request_dict:
+        bot.send_message(user_id, 'Ваш запрос в обработке...')
+
+        results = hotel_search(
+            city_id=request_dict['destination_id'],
+            check_in=request_dict['check_in'],
+            check_out=request_dict['check_out'],
+            amount_of_suggestion=request_dict['amount_of_suggestion'],
+        )
+    for item in results:
+        hotel_photos = photo_search(item['id'], amount_of_photos)
+
+        display = ['Название отеля:', item['name'], 'Адрес:', item['address']['streetAddress'], item['ratePlan']['price']['current']]
+        if hotel_photos:
+            bot.send_media_group(user_id, hotel_photos)
+        bot.send_message(user_id, '\n'.join(display))
+        time.sleep(2)

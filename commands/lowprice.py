@@ -54,7 +54,7 @@ def city_input_details(message: Message):
             'Да': 'yes',
             'Нет': 'no'
         }
-        markup = inline_keyboard(states=dict_of_states, row_width=1)
+        markup = inline_keyboard(states=dict_of_states, row_width=2)
         bot.send_message(message.from_user.id, 'Загрузить фотографии?', reply_markup=markup)
         bot.set_state(message.from_user.id, SurveyStates.get_photos)
     else:
@@ -68,7 +68,14 @@ def city_input_details(call: CallbackQuery):
         bot.set_state(call.from_user.id, SurveyStates.amount_of_photos)
     elif call.data == 'no':
         bot.set_state(call.from_user.id, SurveyStates.results)
-        bot.send_message(call.from_user.id, display_results(bot.retrieve_data()))
+        # TODO
+        display_results(user_id=call.from_user.id)
+        dict_of_states = {
+            'Да': 'yes',
+            'Нет': 'no'
+        }
+        markup = inline_keyboard(states=dict_of_states, row_width=2)
+        bot.send_message(call.from_user.id, 'Верно?', reply_markup=markup)
 
 
 @bot.message_handler(state=SurveyStates.amount_of_photos)
@@ -76,24 +83,10 @@ def city_input_details(message: Message):
     if message.text.isdigit():
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['amount_of_photos'] = int(message.text)
-        bot.set_state(message.from_user.id, SurveyStates.results)
-        with bot.retrieve_data(message.from_user.id) as data:
-            bot.send_message(message.from_user.id, display_results(data))
+
+        display_results(
+            user_id=message.from_user.id,
+            amount_of_photos=request_dict['amount_of_photos']
+        )
     else:
         bot.send_message(message.from_user.id, 'Необходимо ввести целое число')
-
-
-
-# with bot.retrieve_data(message.from_user.id) as data:
-#     bot.send_message(message.from_user.id, 'Ваш запрос в обработке...')
-#     results = hotel_search(
-#         city_id=data['destination_id'],
-#         check_in=data['check_in'],
-#         check_out=data['check_out'],
-#         amount_of_suggestion=data['amount_of_suggestion'],
-#     )
-# for item in results:
-#     display = [item['name'], item['address']['streetAddress'], item['ratePlan']['price']['current']]
-#     bot.send_message(message.from_user.id, '\n'.join(display))
-
-
