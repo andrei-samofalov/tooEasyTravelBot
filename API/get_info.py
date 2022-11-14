@@ -108,11 +108,22 @@ def display_results(user_id: int, amount_of_photos):
             check_out=request_dict['check_out'],
             amount_of_suggestion=request_dict['amount_of_suggestion'],
         )
+    suggestions = 0
     for item in results:
         hotel_photos = photo_search(item['id'], amount_of_photos)
-
-        display = ['Название отеля:', item['name'], 'Адрес:', item['address']['streetAddress'], item['ratePlan']['price']['current']]
         if hotel_photos:
             bot.send_media_group(user_id, hotel_photos)
+
+        display_dict = {
+            '<b>Название</b>': item['name'],
+            '<b>Оценка</b>': f"{item['guestReviews']['rating']}/{item['guestReviews']['scale']}",
+            '<b>Адрес</b>': item['address']['streetAddress'],
+            '<b>Расстояние до центра</b>': item['landmarks'][0]['distance'],
+            '<b>Цена за ночь</b>': item['ratePlan']['price']['current']
+        }
+        display = [f'{key}: {display_dict[key]}' for key in display_dict.keys()]
         bot.send_message(user_id, '\n'.join(display))
-        time.sleep(2)
+        suggestions += 1
+        time.sleep(1)
+    else:
+        bot.send_message(user_id, f'Выгружено {suggestions} отелей')
