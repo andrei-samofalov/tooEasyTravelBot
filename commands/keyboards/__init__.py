@@ -1,1 +1,4 @@
-from . import inline_keyboard
+from . import (
+    inline_keyboard,
+    calendar
+)

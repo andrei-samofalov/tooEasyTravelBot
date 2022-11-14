@@ -5,6 +5,8 @@ from loader import bot
 import time
 from telebot.types import InputMediaPhoto
 from settings.config import headers, url_city, url_hotel, url_photos
+import re
+import datetime
 
 
 def city_search(city):
@@ -26,15 +28,9 @@ def city_search(city):
         return f'Ошибка запроса {response.status_code}'
 
 
-def hotel_search(
-    city_id: int,
-    check_in: str,
-    check_out: str,
-    amount_of_suggestion: int = 5,
-    sort: str = 'PRICE',
-    max_price: int = 1000000,
-    min_price: int = 0,
-) -> Dict:
+def hotel_search(city_id: int, check_in: str, check_out: str,
+                 amount_of_suggestion: int = 5, sort: str = 'PRICE',
+                 max_price: int = 1000000, min_price: int = 0) -> Dict:
 
     """
         Запрос к API сайта для получения списка отелей
@@ -87,15 +83,13 @@ def photo_search(hotel_id, amount=0) -> List[InputMediaPhoto]:
     response = requests.request("GET", url=url_photos, headers=headers, params=querystring)
     if response.status_code == 200:
         photos = json.loads(response.text)
-        photos_list = []
-        for photo in photos['hotelImages']:
-            photos_list.append(InputMediaPhoto(photo['baseUrl'].replace('{size}', 'w')))
+        photos_list = [InputMediaPhoto(photo['baseUrl'].replace('{size}', 'z')) for photo in photos['hotelImages']]
         return photos_list[:amount]
     else:
         print(f'Ошибка {response.status_code}')
 
 
-def display_results(user_id: int, amount_of_photos) -> None:
+def display_results(user_id: int, amount_of_photos=0) -> None:
     """
 
     Функция обращается к каждому отелю функцией photo_search, для каждого отеля формирует данные, выводимые в чат бота
@@ -115,21 +109,35 @@ def display_results(user_id: int, amount_of_photos) -> None:
             check_out=request_dict['check_out'],
             amount_of_suggestion=request_dict['amount_of_suggestion'],
         )
+    if results:
+        for item in results:
+            hotel_photos = photo_search(item['id'], amount_of_photos)
+            if hotel_photos:
+                bot.send_media_group(user_id, hotel_photos)
 
-    for item in results:
-        hotel_photos = photo_search(item['id'], amount_of_photos)
-        if hotel_photos:
-            bot.send_media_group(user_id, hotel_photos)
-
-        display_dict = {
-            '<b>Название</b>': f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>",
-            '<b>Оценка</b>': f"{item['guestReviews']['rating']}/{item['guestReviews']['scale']}",
-            '<b>Адрес</b>': item['address']['streetAddress'],
-            '<b>Расстояние до центра</b>': item['landmarks'][0]['distance'],
-            '<b>Цена за ночь</b>': item['ratePlan']['price']['current']
-        }
-        display = [f'{key}: {display_dict[key]}' for key in display_dict.keys()]
-        bot.send_message(user_id, '\n'.join(display))
-        time.sleep(1)
+            display_dict = {
+                '<b>Название</b>': f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>",
+                '<b>Оценка</b>': f"{item['guestReviews']['rating']}/{item['guestReviews']['scale']}",
+                '<b>Адрес</b>': item['address']['streetAddress'],
+                '<b>Расстояние до центра</b>': item['landmarks'][0]['distance'],
+                '<b>Цена за ночь</b>': item['ratePlan']['price']['current']
+            }
+            display = [f'{key}: {display_dict[key]}' for key in display_dict.keys()]
+            bot.send_message(user_id, '\n'.join(display))
+            time.sleep(1)
+        else:
+            bot.send_message(user_id, f'Все результаты выгружены')
     else:
-        bot.send_message(user_id, f'Все результаты выгружены')
+        bot.send_message(user_id, 'По запросу ничего не найдено')
+
+
+def date_check(date_input: str) -> bool:
+
+    date_temp = date_input.split('-')
+    date_formated = time.strptime(date_input)
+
+    if len(date_temp) == 3 \
+            and re.match(pattern='d{8}', string=''.join(date_temp)) \
+            and date_formated > time.time():
+        return True
+    return False
