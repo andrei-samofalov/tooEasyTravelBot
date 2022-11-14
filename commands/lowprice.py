@@ -68,7 +68,6 @@ def city_input_details(call: CallbackQuery):
         bot.set_state(call.from_user.id, SurveyStates.amount_of_photos)
     elif call.data == 'no':
         bot.set_state(call.from_user.id, SurveyStates.results)
-        # TODO
         display_results(user_id=call.from_user.id)
         dict_of_states = {
             'Да': 'yes',

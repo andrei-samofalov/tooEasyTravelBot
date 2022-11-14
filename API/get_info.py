@@ -1,12 +1,9 @@
 import requests
-from typing import Dict
+from typing import Dict, List
 import json
 from loader import bot
 import time
-from telebot.types import Message, InputMediaPhoto
-
-import telebot
-
+from telebot.types import InputMediaPhoto
 from settings.config import headers, url_city, url_hotel, url_photos
 
 
@@ -76,14 +73,14 @@ def hotel_search(
         print(f'Ошибка {response.status_code}')
 
 
-def photo_search(hotel_id, amount=0):
+def photo_search(hotel_id, amount=0) -> List[InputMediaPhoto]:
     """
     Запрос к API сайта для получения ссылок на фотографии
 
     :param hotel_id: ID отеля из запроса hotel_search
     :param amount: количество фотографий, которые необходимо выгрузить
 
-    :return: список/множество ссылок на фотографии
+    :return: список ссылок на фотографии
     """
 
     querystring = {"id": str(hotel_id)}
@@ -98,7 +95,17 @@ def photo_search(hotel_id, amount=0):
         print(f'Ошибка {response.status_code}')
 
 
-def display_results(user_id: int, amount_of_photos):
+def display_results(user_id: int, amount_of_photos) -> None:
+    """
+
+    Функция обращается к каждому отелю функцией photo_search, для каждого отеля формирует данные, выводимые в чат бота
+
+    :param user_id: ID пользователя, полученного из message.from_user.id или call.from_user.id
+    :param amount_of_photos: Количество фотографий, которое необходимое выгрузить
+    :return: None
+    Результат отправляется в загруженного из loader бота в импортах
+
+    """
     with bot.retrieve_data(user_id) as request_dict:
         bot.send_message(user_id, 'Ваш запрос в обработке...')
 
@@ -108,11 +115,21 @@ def display_results(user_id: int, amount_of_photos):
             check_out=request_dict['check_out'],
             amount_of_suggestion=request_dict['amount_of_suggestion'],
         )
+
     for item in results:
         hotel_photos = photo_search(item['id'], amount_of_photos)
-
-        display = ['Название отеля:', item['name'], 'Адрес:', item['address']['streetAddress'], item['ratePlan']['price']['current']]
         if hotel_photos:
             bot.send_media_group(user_id, hotel_photos)
+
+        display_dict = {
+            '<b>Название</b>': f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>",
+            '<b>Оценка</b>': f"{item['guestReviews']['rating']}/{item['guestReviews']['scale']}",
+            '<b>Адрес</b>': item['address']['streetAddress'],
+            '<b>Расстояние до центра</b>': item['landmarks'][0]['distance'],
+            '<b>Цена за ночь</b>': item['ratePlan']['price']['current']
+        }
+        display = [f'{key}: {display_dict[key]}' for key in display_dict.keys()]
         bot.send_message(user_id, '\n'.join(display))
-        time.sleep(2)
+        time.sleep(1)
+    else:
+        bot.send_message(user_id, f'Все результаты выгружены')
