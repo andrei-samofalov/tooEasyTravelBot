@@ -1,5 +1,5 @@
 from . import (
-    lowprice,
+    common_survey,
     highprice,
     bestdeal,
     history,

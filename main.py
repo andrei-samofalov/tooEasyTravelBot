@@ -1,5 +1,5 @@
 from loader import bot
-from commands.base_commands import base_commands
+from bot_interface.base_commands import base_commands
 from telebot.custom_filters import StateFilter
 
 if __name__ == '__main__':
