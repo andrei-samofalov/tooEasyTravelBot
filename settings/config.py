@@ -29,3 +29,9 @@ DEFAULT_COMMANDS = (
     ('bestdeal', 'Вывести список отелей по заданным параметрам'),
     ('history', 'Показать историю поиска отелей')
 )
+
+sort_order = {
+    '/lowprice': 'PRICE',
+    '/highprice': 'PRICE_HIGHEST_FIRST',
+    '/bestdeal': 'DISTANCE_FROM_LANDMARK'
+}

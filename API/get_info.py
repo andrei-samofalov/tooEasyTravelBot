@@ -3,7 +3,7 @@ import time
 import json
 from typing import Dict
 from loader import bot
-from settings.config import headers, url_city, url_hotel, url_photos
+from settings.config import headers, url_city, url_hotel, url_photos, sort_order
 from bot_interface.commands import photos_output
 
 
@@ -29,8 +29,8 @@ def city_search(city: str) -> Dict:
 
 
 def hotel_search(city_id: int, check_in: str, check_out: str,
-                 amount_of_suggestion: int, sort: str = 'PRICE',
-                 max_price: int = 1000000, min_price: int = 0) -> Dict:
+                 amount_of_suggestion: int, command: str,
+                 max_price: int = 1000000, min_price: int = 0, ) -> Dict:
 
     """
         Запрос к API сайта для получения списка отелей
@@ -48,6 +48,7 @@ def hotel_search(city_id: int, check_in: str, check_out: str,
         :param max_price
         :param min_price
         :param amount_of_suggestion
+        :param command
 
         :return словарь с отелями
     """
@@ -59,7 +60,7 @@ def hotel_search(city_id: int, check_in: str, check_out: str,
         "checkIn": check_in,
         "checkOut": check_out,
         "adults1": "1",
-        "sortOrder": sort,
+        "sortOrder": sort_order[command],
         "locale": "ru_RU",
         "currency": "RUB",
         "priceMin": min_price,
@@ -110,14 +111,18 @@ def display_results(user_id: int) -> None:
         bot.send_message(user_id, 'Ваш запрос в обработке...')
 
         results = hotel_search(
-            city_id=request_dict['destination_id'],
-            check_in=request_dict['check_in'],
-            check_out=request_dict['check_out'],
-            amount_of_suggestion=request_dict['amount_of_suggestion']
+            city_id=request_dict.get('destination_id'),
+            check_in=request_dict.get('check_in'),
+            check_out=request_dict.get('check_out'),
+            amount_of_suggestion=request_dict.get('amount_of_suggestion'),
+            command=request_dict.get('command'),
+            max_price=request_dict.get('max_price'),
+            min_price=request_dict.get('min_price'),
+
         )
         if results:
             for item in results:
-                if request_dict.get('amount_of_photos'):
+                if request_dict.get('amount_of_photos') is not None:
                     hotel_photos = photo_search(item['id'])
                     if hotel_photos:
                         hotel_photos = photos_output(hotel_photos, amount=request_dict.get('amount_of_photos', 0))
@@ -125,10 +130,10 @@ def display_results(user_id: int) -> None:
 
                 display_list = [
                     ('<b>Название</b>', f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>"),
-                    ('<b>Оценка</b>', f"{item['guestReviews']['rating']}/{item['guestReviews']['scale']}"),
+                    ('<b>Оценка</b>', f"{item['guestReviews'].get('rating')}/{item['guestReviews'].get('scale')}"),
                     ('<b>Адрес</b>', item['address']['streetAddress']),
                     ('<b>Расстояние до центра</b>', item['landmarks'][0]['distance']),
-                    ('<b>Цена за ночь</b>', item['ratePlan']['price']['current'])
+                    ('<b>Цена за ночь</b>', item.get('ratePlan').get('price').get('current'))
                 ]
                 display = [f'{key}: {value}' for key, value in display_list]
                 bot.send_message(user_id, '\n'.join(display))

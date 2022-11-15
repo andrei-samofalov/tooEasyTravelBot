@@ -1,8 +1,8 @@
 from loader import bot
 from telebot.types import Message, CallbackQuery
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
-from API.get_info import city_search, display_results
-from settings.states import SurveyStates, CommandStates
+from API.get_info import city_search, hotel_search, photo_search, display_results
+from settings.states import SurveyStates
 import re
 
 
@@ -10,12 +10,8 @@ import re
 def city_input(message: Message):
     bot.send_message(message.from_user.id, 'Введите название города')
     bot.set_state(message.from_user.id, SurveyStates.city_input)
-    if message.text == '/lowprice':
-        bot.set_state(message.from_user.id, CommandStates.low_price)
-    elif message.text == '/highprice':
-        bot.set_state(message.from_user.id, CommandStates.high_price)
-    else:
-        bot.set_state(message.from_user.id, CommandStates.best_deal)
+    with bot.retrieve_data(message.from_user.id) as request_dict:
+        request_dict['command'] = message.text
 
 
 @bot.message_handler(state=SurveyStates.city_input)
@@ -31,9 +27,46 @@ def city_input(message: Message):
 @bot.callback_query_handler(state=SurveyStates.city_input, func=lambda x: True)
 def city_input_details(call: CallbackQuery):
     with bot.retrieve_data(call.from_user.id) as request_dict:
-        request_dict['destination_id'] = int(call.data)
-    bot.send_message(call.from_user.id, 'Введите дату заезда в формате YYYY-MM-DD')
-    bot.set_state(call.from_user.id, SurveyStates.check_in)
+        request_dict['destination_id'] = int(call.data)   # TODO если команда такая-то, то state такой, вызов промежуточной функции
+        if request_dict['command'] == '/bestdeal':
+            bot.set_state(call.from_user.id, SurveyStates.min_price)
+            bot.send_message(call.from_user.id, 'Введите минимальную стоимость за сутки (руб)')
+        else:
+            bot.set_state(call.from_user.id, SurveyStates.check_in)
+            bot.send_message(call.from_user.id, 'Введите дату заезда в формате YYYY-MM-DD')
+
+
+@bot.message_handler(state=SurveyStates.min_price)
+def min_price(message: Message):
+    if message.text.isdigit():
+        bot.set_state(message.from_user.id, SurveyStates.max_price)
+        with bot.retrieve_data(message.from_user.id) as request_data:
+            request_data['min_price'] = float(message.text)/1000
+        bot.send_message(message.from_user.id, 'Введите максимальную стоимость за сутки (руб)')
+    else:
+        bot.send_message(message.from_user.id, 'Необходимо ввести целое или вещественное число')
+
+
+@bot.message_handler(state=SurveyStates.max_price)
+def min_price(message: Message):
+    if message.text.isdigit():
+        bot.set_state(message.from_user.id, SurveyStates.distance)
+        with bot.retrieve_data(message.from_user.id) as request_data:
+            request_data['max_price'] = float(message.text)/1000
+        bot.send_message(message.from_user.id, 'Введите максимальное удаление от центра')
+    else:
+        bot.send_message(message.from_user.id, 'Необходимо ввести целое или вещественное число')
+
+
+@bot.message_handler(state=SurveyStates.distance)
+def min_price(message: Message):
+    if message.text.isdigit():
+        bot.set_state(message.from_user.id, SurveyStates.check_in)
+        with bot.retrieve_data(message.from_user.id) as request_data:
+            request_data['distance'] = float(message.text)
+        bot.send_message(message.from_user.id, 'Введите дату заезда в формате YYYY-MM-DD')
+    else:
+        bot.send_message(message.from_user.id, 'Необходимо ввести целое или вещественное число')
 
 
 @bot.message_handler(state=SurveyStates.check_in)
@@ -41,10 +74,11 @@ def check_in_input(message: Message):
 
     if re.match(pattern=r'\d{4}-\d{2}-\d{2}\b', string=message.text):
         # TODO Внедрить календарь для выбора даты
+        bot.set_state(message.from_user.id, SurveyStates.check_out)
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['check_in'] = message.text
         bot.send_message(message.from_user.id, 'Введите дату выезда в формате YYYY-MM-DD')
-        bot.set_state(message.from_user.id, SurveyStates.check_out)
+
     else:
         bot.send_message(message.from_user.id, 'Проверьте формат ввода')
 
@@ -81,13 +115,16 @@ def get_amount(message: Message):
 @bot.callback_query_handler(state=SurveyStates.get_photos, func=lambda x: True)
 def get_photo(call: CallbackQuery):
     if call.data == 'yes':
-        bot.send_message(call.from_user.id, 'Какое количество фотографий?')
         bot.set_state(call.from_user.id, SurveyStates.amount_of_photos)
+        bot.send_message(call.from_user.id, 'Какое количество фотографий?')
+
     elif call.data == 'no':
-        with bot.retrieve_data(call.from_user.id) as request_dict:
-            request_dict['amount_of_suggestion'] = 0
         bot.set_state(call.from_user.id, SurveyStates.results)
-        display_results(user_id=call.from_user.id)      # TODO
+        with bot.retrieve_data(call.from_user.id) as request_dict:
+            request_dict['amount_of_photos'] = None
+            print(request_dict)
+
+            display_results(user_id=call.from_user.id)      # TODO
 
 
 @bot.message_handler(state=SurveyStates.amount_of_photos)
@@ -104,7 +141,9 @@ def get_photo(message: Message):
 
 @bot.message_handler(state=SurveyStates.results)
 def city_input_details(message: Message):
-    bot.send_message(message.from_user.id, 'Проверьте ввод')
+    bot.send_message(message.from_user.id, 'Проверьте ввод, для справки /help')
 
 
-
+@bot.message_handler(content_types=['text'])
+def echo(message: Message):
+    bot.send_message(message.from_user.id, 'Проверьте ввод, для справки /help')
