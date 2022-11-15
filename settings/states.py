@@ -14,3 +14,10 @@ class SurveyStates(StatesGroup):
     max_price = State()
     min_price = State()
     results = State()
+
+
+class CommandStates(StatesGroup):
+
+    low_price = State()
+    high_price = State()
+    best_deal = State()

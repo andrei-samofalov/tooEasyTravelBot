@@ -12,8 +12,8 @@ def inline_keyboard(states: Dict[str, str], row_width: int = 2) -> InlineKeyboar
                             фактически означает количество кнопок в линии
                             (по умолчанию - две кнопки на линию)
     """
-    markup_keyboard = InlineKeyboardMarkup()
-    for key, value in states.items():
-        markup_keyboard.add(InlineKeyboardButton(text=key, callback_data=value), row_width=row_width)
+    markup_keyboard = InlineKeyboardMarkup(row_width=row_width)
+    buttons = [InlineKeyboardButton(text=key, callback_data=value) for key, value in states.items()]
+    markup_keyboard.add(*buttons)
 
     return markup_keyboard
