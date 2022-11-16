@@ -1,9 +1,10 @@
 import requests
 import time
+from datetime import datetime
 import json
 from typing import Dict
 from loader import bot
-from settings.config import headers, url_city, url_hotel, url_photos
+from settings.config import headers, url_city, url_hotel, url_photos, sort_order
 from bot_interface.commands import photos_output
 
 
@@ -29,8 +30,8 @@ def city_search(city: str) -> Dict:
 
 
 def hotel_search(city_id: int, check_in: str, check_out: str,
-                 amount_of_suggestion: int, sort: str = 'PRICE',
-                 max_price: int = 1000000, min_price: int = 0) -> Dict:
+                 amount_of_suggestion: int, command: str,
+                 max_price: str = '1000000', min_price: str = '1') -> Dict:
 
     """
         Запрос к API сайта для получения списка отелей
@@ -48,6 +49,7 @@ def hotel_search(city_id: int, check_in: str, check_out: str,
         :param max_price
         :param min_price
         :param amount_of_suggestion
+        :param command
 
         :return словарь с отелями
     """
@@ -59,7 +61,7 @@ def hotel_search(city_id: int, check_in: str, check_out: str,
         "checkIn": check_in,
         "checkOut": check_out,
         "adults1": "1",
-        "sortOrder": sort,
+        "sortOrder": sort_order[command],
         "locale": "ru_RU",
         "currency": "RUB",
         "priceMin": min_price,
@@ -96,6 +98,14 @@ def photo_search(hotel_id) -> Dict:
         print(f'Ошибка {response.status_code}')
 
 
+def is_valid_date(date: str) -> bool:
+    try:
+        if datetime.strptime(date, '%Y-%m-%d').date() > datetime.today().date():
+            return True
+    except ValueError:
+        return False
+
+
 def display_results(user_id: int) -> None:
     """
 
@@ -107,13 +117,17 @@ def display_results(user_id: int) -> None:
 
     """
     with bot.retrieve_data(user_id) as request_dict:
-        bot.send_message(user_id, 'Ваш запрос в обработке...')
+        bot.send_message(user_id, 'Ваш запрос обрабатывается...')
 
         results = hotel_search(
-            city_id=request_dict['destination_id'],
-            check_in=request_dict['check_in'],
-            check_out=request_dict['check_out'],
-            amount_of_suggestion=request_dict['amount_of_suggestion']
+            city_id=request_dict.get('destination_id'),
+            check_in=request_dict.get('check_in'),
+            check_out=request_dict.get('check_out'),
+            amount_of_suggestion=request_dict.get('amount_of_suggestion'),
+            command=request_dict.get('command'),
+            max_price=request_dict.get('max_price'),
+            min_price=request_dict.get('min_price'),
+
         )
         if results:
             for item in results:
@@ -125,13 +139,14 @@ def display_results(user_id: int) -> None:
 
                 display_list = [
                     ('<b>Название</b>', f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>"),
-                    ('<b>Оценка</b>', f"{item['guestReviews']['rating']}/{item['guestReviews']['scale']}"),
-                    ('<b>Адрес</b>', item['address']['streetAddress']),
-                    ('<b>Расстояние до центра</b>', item['landmarks'][0]['distance']),
-                    ('<b>Цена за ночь</b>', item['ratePlan']['price']['current'])
+                    ('<b>Оценка</b>', f"{item.get('guestReviews', {}).get('rating', 'Нет данных')}"
+                                      f"/{item.get('guestReviews', {}).get('scale', 'Нет данных')}"),
+                    ('<b>Адрес</b>', item.get('address', {}).get('streetAddress', 'Нет данных')),
+                    ('<b>Расстояние до центра</b>', item.get('landmarks', [])[0]['distance']),
+                    ('<b>Цена за ночь</b>', item.get('ratePlan', {}).get('price', {}).get('current', 'Нет данных'))
                 ]
                 display = [f'{key}: {value}' for key, value in display_list]
-                bot.send_message(user_id, '\n'.join(display))
+                bot.send_message(user_id, '\n'.join(display), disable_web_page_preview=True)
                 # bot.send_location(user_id, latitude=item['coordinate']['lat'], longitude=item['coordinate']['lon'])
                 time.sleep(1)
             else:
