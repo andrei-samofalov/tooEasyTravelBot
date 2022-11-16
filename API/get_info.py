@@ -5,7 +5,7 @@ import json
 from typing import Dict
 from loader import bot
 from settings.config import headers, url_city, url_hotel, url_photos, sort_order
-from bot_interface.commands import photos_output
+from bot_interface.custom_functions import photos_output
 
 
 def city_search(city: str) -> Dict:
@@ -104,6 +104,12 @@ def is_valid_date(date: str) -> bool:
             return True
     except ValueError:
         return False
+
+
+def check_date(check_in: str, check_out: str) -> bool:
+    if time.mktime(check_out) - datetime.strptime(check_in, '%c') >= 1:
+        return True
+    return False
 
 
 def display_results(user_id: int) -> None:
