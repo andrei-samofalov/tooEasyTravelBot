@@ -1,5 +1,6 @@
 import requests
 import time
+from datetime import datetime
 import json
 from typing import Dict
 from loader import bot
@@ -30,7 +31,7 @@ def city_search(city: str) -> Dict:
 
 def hotel_search(city_id: int, check_in: str, check_out: str,
                  amount_of_suggestion: int, command: str,
-                 max_price: int = 1000000, min_price: int = 0, ) -> Dict:
+                 max_price: str = '1000000', min_price: str = '1') -> Dict:
 
     """
         Запрос к API сайта для получения списка отелей
@@ -97,6 +98,14 @@ def photo_search(hotel_id) -> Dict:
         print(f'Ошибка {response.status_code}')
 
 
+def is_valid_date(date: str) -> bool:
+    try:
+        if datetime.strptime(date, '%Y-%m-%d').date() > datetime.today().date():
+            return True
+    except ValueError:
+        return False
+
+
 def display_results(user_id: int) -> None:
     """
 
@@ -108,7 +117,7 @@ def display_results(user_id: int) -> None:
 
     """
     with bot.retrieve_data(user_id) as request_dict:
-        bot.send_message(user_id, 'Ваш запрос в обработке...')
+        bot.send_message(user_id, 'Ваш запрос обрабатывается...')
 
         results = hotel_search(
             city_id=request_dict.get('destination_id'),
@@ -122,7 +131,7 @@ def display_results(user_id: int) -> None:
         )
         if results:
             for item in results:
-                if request_dict.get('amount_of_photos') is not None:
+                if request_dict.get('amount_of_photos'):
                     hotel_photos = photo_search(item['id'])
                     if hotel_photos:
                         hotel_photos = photos_output(hotel_photos, amount=request_dict.get('amount_of_photos', 0))
@@ -130,13 +139,14 @@ def display_results(user_id: int) -> None:
 
                 display_list = [
                     ('<b>Название</b>', f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>"),
-                    ('<b>Оценка</b>', f"{item['guestReviews'].get('rating')}/{item['guestReviews'].get('scale')}"),
-                    ('<b>Адрес</b>', item['address']['streetAddress']),
-                    ('<b>Расстояние до центра</b>', item['landmarks'][0]['distance']),
-                    ('<b>Цена за ночь</b>', item.get('ratePlan').get('price').get('current'))
+                    ('<b>Оценка</b>', f"{item.get('guestReviews', {}).get('rating', 'Нет данных')}"
+                                      f"/{item.get('guestReviews', {}).get('scale', 'Нет данных')}"),
+                    ('<b>Адрес</b>', item.get('address', {}).get('streetAddress', 'Нет данных')),
+                    ('<b>Расстояние до центра</b>', item.get('landmarks', [])[0]['distance']),
+                    ('<b>Цена за ночь</b>', item.get('ratePlan', {}).get('price', {}).get('current', 'Нет данных'))
                 ]
                 display = [f'{key}: {value}' for key, value in display_list]
-                bot.send_message(user_id, '\n'.join(display))
+                bot.send_message(user_id, '\n'.join(display), disable_web_page_preview=True)
                 # bot.send_location(user_id, latitude=item['coordinate']['lat'], longitude=item['coordinate']['lon'])
                 time.sleep(1)
             else:

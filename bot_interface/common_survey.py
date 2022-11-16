@@ -1,13 +1,13 @@
-from loader import bot
 from telebot.types import Message, CallbackQuery
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
-from API.get_info import city_search, hotel_search, photo_search, display_results
+from API.get_info import *
 from settings.states import SurveyStates
 import re
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
 def city_input(message: Message):
+    bot.reset_data(message.from_user.id)
     bot.send_message(message.from_user.id, 'Введите название города')
     bot.set_state(message.from_user.id, SurveyStates.city_input)
     with bot.retrieve_data(message.from_user.id) as request_dict:
@@ -38,24 +38,24 @@ def city_input_details(call: CallbackQuery):
 
 @bot.message_handler(state=SurveyStates.min_price)
 def min_price(message: Message):
-    if message.text.isdigit():
+    if message.text.isdigit() and int(message.text) > 0:
         bot.set_state(message.from_user.id, SurveyStates.max_price)
         with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['min_price'] = float(message.text)/1000
+            request_data['min_price'] = message.text
         bot.send_message(message.from_user.id, 'Введите максимальную стоимость за сутки (руб)')
     else:
-        bot.send_message(message.from_user.id, 'Необходимо ввести целое или вещественное число')
+        bot.send_message(message.from_user.id, 'Необходимо ввести целое или вещественное число больше 0')
 
 
 @bot.message_handler(state=SurveyStates.max_price)
 def min_price(message: Message):
-    if message.text.isdigit():
+    if message.text.isdigit() and int(message.text) > 0:
         bot.set_state(message.from_user.id, SurveyStates.distance)
         with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['max_price'] = float(message.text)/1000
-        bot.send_message(message.from_user.id, 'Введите максимальное удаление от центра')
+            request_data['max_price'] = message.text
+        bot.send_message(message.from_user.id, 'Введите максимальное удаление от центра (км)')
     else:
-        bot.send_message(message.from_user.id, 'Необходимо ввести целое или вещественное число')
+        bot.send_message(message.from_user.id, 'Необходимо ввести целое или вещественное число больше 0')
 
 
 @bot.message_handler(state=SurveyStates.distance)
@@ -72,7 +72,7 @@ def min_price(message: Message):
 @bot.message_handler(state=SurveyStates.check_in)
 def check_in_input(message: Message):
 
-    if re.match(pattern=r'\d{4}-\d{2}-\d{2}\b', string=message.text):
+    if is_valid_date(message.text):
         # TODO Внедрить календарь для выбора даты
         bot.set_state(message.from_user.id, SurveyStates.check_out)
         with bot.retrieve_data(message.from_user.id) as request_dict:
