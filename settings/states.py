@@ -13,8 +13,4 @@ class SurveyStates(StatesGroup):
     max_price = State()
     min_price = State()
     echo = State()
-
-
-class HistoryStates(StatesGroup):
-
     history = State()

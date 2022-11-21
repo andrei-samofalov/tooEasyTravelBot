@@ -1,28 +1,10 @@
 from telebot.types import Message, CallbackQuery
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
+from bot_interface.keyboards.stop_this_madness import stop_this
 from bot_interface.custom_functions import format_date
 from API.get_info import *
 from settings.states import SurveyStates
 from telegram_bot_calendar import DetailedTelegramCalendar
-from settings.config import DEFAULT_COMMANDS
-
-
-@bot.message_handler(commands=['start'])
-def bot_help(message: Message):
-    text = [
-        'Приветствую тебя, путник!',
-        'Этот бот поможет тебе найти отель твоей мечты по всему миру (пока кроме России).',
-        'Ты можешь попросить бота показать отели с сортировкой по цене: от самых низких и наоборот, '
-        'задать диапазон цен и удаленность от центра города.',
-        'Для справки введи команду /help'
-    ]
-    bot.send_message(message.from_user.id, '\n\n'.join(text))
-
-
-@bot.message_handler(commands=['help'])
-def bot_help(message: Message):
-    text = [f'/{command} - {desk}' for command, desk in DEFAULT_COMMANDS]
-    bot.send_message(message.from_user.id, '\n'.join(text))
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -41,7 +23,8 @@ def city_input(message: Message):
         markup = inline_keyboard(states=dict_of_states, row_width=1)
         bot.send_message(message.from_user.id, 'Уточните запрос', reply_markup=markup)
     else:
-        bot.send_message(message.from_user.id, 'По запросу ничего не найдено, введите корректное название населенного пункта')
+        bot.send_message(message.from_user.id,
+                         'По запросу ничего не найдено, введите корректное название населенного пункта')
 
 
 @bot.callback_query_handler(state=SurveyStates.city_input, func=lambda x: True)
@@ -51,7 +34,8 @@ def city_input_details(call: CallbackQuery):
         request_dict['destination_id'] = int(call.data)
         if request_dict['command'] == '/bestdeal':
             bot.set_state(call.from_user.id, SurveyStates.min_price)
-            bot.send_message(call.from_user.id, 'Введите минимальную стоимость за сутки (руб)')
+            bot.send_message(call.from_user.id,
+                             'Введите минимальную стоимость за сутки (руб)')
         else:
             bot.set_state(call.from_user.id, SurveyStates.check_in)
             calendar_bot, step = DetailedTelegramCalendar().build()
@@ -178,7 +162,7 @@ def get_photo(call: CallbackQuery):
         bot.send_message(call.from_user.id, 'Какое количество фотографий? (до 10)')
 
     elif call.data == 'no':
-        bot.set_state(call.from_user.id, SurveyStates.echo)
+        bot.delete_state(call.from_user.id)
         with bot.retrieve_data(call.from_user.id) as request_dict:
             request_dict['amount_of_photos'] = None
 
@@ -188,7 +172,7 @@ def get_photo(call: CallbackQuery):
 @bot.message_handler(state=SurveyStates.amount_of_photos)
 def get_photo(message: Message):
     if message.text.isdigit() and int(message.text) <= 10:
-        bot.set_state(message.from_user.id, SurveyStates.echo)
+        bot.delete_state(message.from_user.id)
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['amount_of_photos'] = int(message.text)
 
@@ -198,6 +182,6 @@ def get_photo(message: Message):
         bot.send_message(message.from_user.id, 'Необходимо ввести целое число от 1 до 10')
 
 
-# @bot.message_handler(content_types=['text'], state=SurveyStates.echo)
-# def echo(message: Message):
-#     bot.send_message(message.from_user.id, 'Проверьте ввод, для справки /help')
+@bot.message_handler(content_types=['text'], state=SurveyStates.echo)
+def echo(message: Message):
+    bot.send_message(message.from_user.id, 'Проверьте ввод, для справки /help')
