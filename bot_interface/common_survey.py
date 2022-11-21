@@ -1,18 +1,10 @@
 from telebot.types import Message, CallbackQuery
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
+from bot_interface.custom_functions import format_date
 from API.get_info import *
 from settings.states import SurveyStates
 from telegram_bot_calendar import DetailedTelegramCalendar
 from settings.config import DEFAULT_COMMANDS
-
-
-@bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
-def city_input(message: Message):
-    bot.reset_data(message.from_user.id)
-    bot.send_message(message.from_user.id, 'Введите название города')
-    bot.set_state(message.from_user.id, SurveyStates.city_input)
-    with bot.retrieve_data(message.from_user.id) as request_dict:
-        request_dict['command'] = message.text
 
 
 @bot.message_handler(commands=['start'])
@@ -33,6 +25,15 @@ def bot_help(message: Message):
     bot.send_message(message.from_user.id, '\n'.join(text))
 
 
+@bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
+def city_input(message: Message):
+    bot.reset_data(message.from_user.id)
+    bot.send_message(message.from_user.id, 'Введите название города')
+    bot.set_state(message.from_user.id, SurveyStates.city_input)
+    with bot.retrieve_data(message.from_user.id) as request_dict:
+        request_dict['command'] = message.text
+
+
 @bot.message_handler(state=SurveyStates.city_input)
 def city_input(message: Message):
     dict_of_states = city_search(message.text)
@@ -45,8 +46,9 @@ def city_input(message: Message):
 
 @bot.callback_query_handler(state=SurveyStates.city_input, func=lambda x: True)
 def city_input_details(call: CallbackQuery):
+
     with bot.retrieve_data(call.from_user.id) as request_dict:
-        request_dict['destination_id'] = int(call.data)   # TODO если команда такая-то, то state такой, вызов промежуточной функции
+        request_dict['destination_id'] = int(call.data)
         if request_dict['command'] == '/bestdeal':
             bot.set_state(call.from_user.id, SurveyStates.min_price)
             bot.send_message(call.from_user.id, 'Введите минимальную стоимость за сутки (руб)')
@@ -67,19 +69,21 @@ def calendar(call: CallbackQuery):
                               call.message.message_id,
                               reply_markup=key)
     elif is_valid_date(result):
-        bot.edit_message_text(f"{result}",
+        bot.edit_message_text(f"Выбранная дата заезда: {format_date(result)}",
                               call.message.chat.id,
                               call.message.message_id)
         bot.set_state(call.from_user.id, SurveyStates.check_out)
         with bot.retrieve_data(call.from_user.id) as request_dict:
             request_dict['check_in'] = result
-            print(request_dict['check_in'])
+
         calendar_bot, step = DetailedTelegramCalendar().build()
         bot.send_message(call.from_user.id,
                          f"Выберите дату выезда",
                          reply_markup=calendar_bot)
     else:
-        bot.send_message(call.from_user.id, 'Нельзя выбрать прошедшую дату')
+        bot.edit_message_text('Можно выбрать дату, начиная с завтрашней',
+                              call.message.chat.id,
+                              call.message.message_id)
         calendar_bot, step = DetailedTelegramCalendar().build()
         bot.send_message(call.from_user.id,
                          f"Выберите дату заезда",
@@ -96,16 +100,18 @@ def calendar(call: CallbackQuery):
                                   call.message.chat.id,
                                   call.message.message_id,
                                   reply_markup=key)
-        elif is_valid_date(result) and result - request_dict['check_in'] >= 1:
-            bot.edit_message_text(f"{result}",
+        elif is_valid_date(result) and result > request_dict['check_in']:
+            bot.edit_message_text(f"Выбранная дата выезда: {format_date(result)}",
                                   call.message.chat.id,
                                   call.message.message_id)
             bot.set_state(call.from_user.id, SurveyStates.amount_of_suggestion)
             request_dict['check_out'] = result
-            print(request_dict['check_out'])
-            bot.send_message(call.from_user.id, 'Сколько выводить предложений?')
+
+            bot.send_message(call.from_user.id, 'Сколько выводить предложений (максимум 25)?')
         else:
-            bot.send_message(call.from_user.id, 'Нельзя выбрать прошедшую дату')
+            bot.edit_message_text('Дата выезда может быть не ранее даты заезда плюс один день',
+                                  call.message.chat.id,
+                                  call.message.message_id)
             calendar_bot, step = DetailedTelegramCalendar().build()
             bot.send_message(call.from_user.id,
                              f"Выберите дату выезда",
@@ -151,18 +157,18 @@ def min_price(message: Message):
 
 @bot.message_handler(state=SurveyStates.amount_of_suggestion)
 def get_amount(message: Message):
-    if message.text.isdigit():
+    if message.text.isdigit() and int(message.text) <= 25:
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['amount_of_suggestion'] = message.text
         dict_of_states = {
             'Да': 'yes',
             'Нет': 'no'
         }
-        markup = inline_keyboard(states=dict_of_states, row_width=2)
+        markup = inline_keyboard(states=dict_of_states, row_width=1)
         bot.send_message(message.from_user.id, 'Загружать фотографии отелей?', reply_markup=markup)
         bot.set_state(message.from_user.id, SurveyStates.get_photos)
     else:
-        bot.send_message(message.from_user.id, 'Необходимо ввести целое число')
+        bot.send_message(message.from_user.id, 'Необходимо ввести целое число до 25 включительно')
 
 
 @bot.callback_query_handler(state=SurveyStates.get_photos, func=lambda x: True)
@@ -172,7 +178,7 @@ def get_photo(call: CallbackQuery):
         bot.send_message(call.from_user.id, 'Какое количество фотографий? (до 10)')
 
     elif call.data == 'no':
-        bot.set_state(call.from_user.id, SurveyStates.results)
+        bot.set_state(call.from_user.id, SurveyStates.echo)
         with bot.retrieve_data(call.from_user.id) as request_dict:
             request_dict['amount_of_photos'] = None
 
@@ -182,20 +188,16 @@ def get_photo(call: CallbackQuery):
 @bot.message_handler(state=SurveyStates.amount_of_photos)
 def get_photo(message: Message):
     if message.text.isdigit() and int(message.text) <= 10:
-        bot.set_state(message.from_user.id, SurveyStates.results)
+        bot.set_state(message.from_user.id, SurveyStates.echo)
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['amount_of_photos'] = int(message.text)
 
         display_results(user_id=message.from_user.id)
+
     else:
         bot.send_message(message.from_user.id, 'Необходимо ввести целое число от 1 до 10')
 
 
-@bot.message_handler(state=SurveyStates.results)
-def city_input_details(message: Message):
-    bot.send_message(message.from_user.id, 'Проверьте ввод, для справки /help')
-
-
-@bot.message_handler(content_types=['text'])
-def echo(message: Message):
-    bot.send_message(message.from_user.id, 'Проверьте ввод, для справки /help')
+# @bot.message_handler(content_types=['text'], state=SurveyStates.echo)
+# def echo(message: Message):
+#     bot.send_message(message.from_user.id, 'Проверьте ввод, для справки /help')

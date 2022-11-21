@@ -1,8 +1,7 @@
 from . import (
     common_survey,
-    highprice,
-    bestdeal,
     history,
     keyboards,
-    base_commands
+    base_commands,
+    custom_functions
 )
