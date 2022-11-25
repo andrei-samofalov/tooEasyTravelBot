@@ -8,4 +8,3 @@ if __name__ == '__main__':
     bot.add_custom_filter(StateFilter(bot))
     print('Бот запущен')
     bot.polling(non_stop=True, interval=0)
-
