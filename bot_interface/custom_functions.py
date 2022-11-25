@@ -3,11 +3,11 @@ from datetime import datetime
 from telebot.types import InputMediaPhoto
 
 
-def photos_output(photos: dict, amount=0) -> list[InputMediaPhoto]:
+def photos_output(photos: dict, caption: str, amount=0) -> list[InputMediaPhoto]:
     """ Функция для преобразования выгруженных фотографий
         в формат pyTelegramAPI в количестве, указанном пользователем """
     photos_list = [
-        InputMediaPhoto(photo['baseUrl'].replace('{size}', 'z'))
+        InputMediaPhoto(photo['baseUrl'].replace('{size}', 'z'), caption=caption, parse_mode='html')
         for photo in photos['hotelImages']
     ]
     return photos_list[:amount]
