@@ -4,6 +4,7 @@ import time
 from telebot.types import Message
 
 from loader import bot
+from settings.config import INT_ERROR
 from settings.states import SurveyStates
 
 
@@ -33,7 +34,6 @@ def get_history(message: Message) -> None:
                      '\n/help - справка'
             )
         else:
-            bot.delete_state(message.from_user.id)
 
             for user in json_db:
                 if user.get('id') == message.from_user.id:
@@ -46,18 +46,21 @@ def get_history(message: Message) -> None:
                                              text='\n\n'.join(display),
                                              disable_web_page_preview=True)
                             time.sleep(1)
+                            bot.delete_state(message.from_user.id)
                         break
                     else:
                         bot.send_message(
                             chat_id=message.from_user.id,
-                            text=f'Вы сделали меньше количество запросов, '
-                                 f'чем желаете отобразить ({user_requests})'
-                        )
+                            text=f'Вы сделали меньше количество '
+                                 f'запросов ({user_requests}), '
+                                 f'чем желаете отобразить')
+                        break
             else:
                 bot.send_message(
                     chat_id=message.from_user.id,
                     text='Вы еще не делали запросов, самое время это сделать!'
                          '\n/help - справка')
+
     else:
         bot.send_message(chat_id=message.from_user.id,
-                         text='Необходимо ввести целое число')
+                         text=INT_ERROR)
