@@ -233,9 +233,6 @@ def get_photo(call: CallbackQuery) -> None:
 
     elif call.data == 'no':
 
-        # with bot.retrieve_data(call.from_user.id) as request_dict:
-        #     request_dict['amount_of_photos'] = None
-
         display_results(user_id=call.from_user.id)
         bot.delete_state(call.from_user.id)
 
