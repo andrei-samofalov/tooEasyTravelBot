@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from telebot.types import InputMediaPhoto
-from telebot.types import CallbackQuery
 
 
 def photos_output(photos: dict, amount=0) -> list[InputMediaPhoto]:

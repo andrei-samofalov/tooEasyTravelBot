@@ -7,7 +7,8 @@ from typing import Dict
 import requests
 
 from bot_interface.custom_functions import photos_output, total_cost
-from database.data_load import load_to_dict, load_to_json, new_user
+from database.data_load import (load_to_dict, load_to_json, new_user,
+                                collected_data)
 from loader import bot
 from settings.config import (headers, sort_order, url_city, url_hotel,
                              url_photos)
@@ -136,18 +137,18 @@ def display_results(user_id: int) -> None:
 
         results = hotel_search(
             city_id=request_dict.get('destination_id'),
-            check_in=request_dict.get('check_in'),
-            check_out=request_dict.get('check_out'),
-            amount_of_suggestion=request_dict.get('amount_of_suggestion'),
-            command=request_dict.get('command'),
-            max_price=request_dict.get('max_price'),
-            min_price=request_dict.get('min_price'),
+            check_in=request_dict.get('Дата заезда'),
+            check_out=request_dict.get('Дата выезда'),
+            amount_of_suggestion=request_dict.get('Кол-во предложений'),
+            command=request_dict.get('Команда'),
+            max_price=request_dict.get('Максимальная цена'),
+            min_price=request_dict.get('Минимальная цена'),
 
         )
         user_dict = new_user(user_id=user_id)
         if results:
             for item in results:
-                if request_dict.get('amount_of_photos'):
+                if request_dict.get('Кол-во фотографий'):
                     hotel_photos = photo_search(hotel_id=item['id'])
 
                     # если полученный результат - словарь, то преобразовать в
@@ -156,7 +157,7 @@ def display_results(user_id: int) -> None:
                     if isinstance(hotel_photos, dict):
                         hotel_photos = photos_output(
                             photos=hotel_photos,
-                            amount=request_dict.get('amount_of_photos', 0)
+                            amount=request_dict.get('Кол-во фотографий', 0)
                         )
                         bot.send_media_group(chat_id=user_id, media=hotel_photos)
                     else:
@@ -164,8 +165,8 @@ def display_results(user_id: int) -> None:
                                          text='Не удалось загрузить фотографии')
 
                 cost_of_journey = total_cost(
-                    check_in=request_dict.get('check_in'),
-                    check_out=request_dict.get('check_out'),
+                    check_in=request_dict.get('Дата заезда'),
+                    check_out=request_dict.get('Дата выезда'),
                     cost=item.get('ratePlan', {}).get('price', {}).get('exactCurrent', 0)
                 )
                 display_list = [
@@ -178,7 +179,8 @@ def display_results(user_id: int) -> None:
                     ('<b>Общая стоимость проживания</b>', f'{cost_of_journey:,d} RUB')
                 ]
                 display = [f'{key}: {value}' for key, value in display_list]
-                new_dict = load_to_dict(user_dict=user_dict, command=request_dict['command'],
+
+                new_dict = load_to_dict(user_dict=user_dict, command=collected_data(request_dict),
                                         time=time.strftime('%d.%m.%y %H:%M'),
                                         data_list=display)
 

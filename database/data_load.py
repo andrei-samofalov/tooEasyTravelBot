@@ -11,6 +11,15 @@ def new_user(user_id: str | int) -> dict:
     return log
 
 
+def collected_data(survey_dict: dict) -> str:
+    """ Функция для записи собранных данных опроса """
+    display = []
+    for k, v in survey_dict.items():
+        if k != 'destination_id':
+            display.append(f'{k}: {v}')
+    return '\n'.join(display)
+
+
 def load_to_dict(user_dict: dict, command: str, time: str, data_list: list) -> dict:
     """
     Функция для записи запрошенных отелей в словарь, созданный в функции new_user
@@ -21,7 +30,7 @@ def load_to_dict(user_dict: dict, command: str, time: str, data_list: list) -> d
     :param data_list: list, данные, полученные от API
     :return: dict
     """
-    user_dict['requests'] += {'Команда': command,
+    user_dict['requests'] += {'Детали запроса': command,
                               'Дата и время вызова': time,
                               'Результат': '\n'.join(data_list)
                               },

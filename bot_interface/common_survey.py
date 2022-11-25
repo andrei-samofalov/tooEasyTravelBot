@@ -3,7 +3,7 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 from loader import bot
 
 from API.get_info import city_search, is_valid_date, display_results
-from bot_interface.custom_functions import format_date
+from bot_interface.custom_functions import format_date, city_name_extract
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
 from settings.states import SurveyStates
 from settings.config import MAX_PHOTOS, MAX_HOTELS, NUM_ERROR, INT_ERROR
@@ -17,7 +17,7 @@ def city_input(message: Message) -> None:
     bot.send_message(message.from_user.id, 'Введите название города')
     bot.set_state(message.from_user.id, SurveyStates.city_input)
     with bot.retrieve_data(message.from_user.id) as request_dict:
-        request_dict['command'] = message.text
+        request_dict['Команда'] = message.text
 
 
 @bot.message_handler(state=SurveyStates.city_input)
@@ -45,7 +45,7 @@ def city_input_clarify(message: Message) -> None:
 
 @bot.callback_query_handler(state=SurveyStates.city_input, func=None)
 def city_input_details(call: CallbackQuery) -> None:
-    """ Хэндлер, реагирует на нажитие inline-кнопки с выбором наиболее
+    """ Хэндлер, реагирует на нажатие inline-кнопки с выбором наиболее
         подходящего населенного пункта.
         В зависимости от выбранной команды запрашивает либо минимальную
         стоимость проживания (начало ответвления опроса bestdeal),
@@ -53,7 +53,11 @@ def city_input_details(call: CallbackQuery) -> None:
         """
     with bot.retrieve_data(call.from_user.id) as request_dict:
         request_dict['destination_id'] = int(call.data)
-        if request_dict['command'] == '/bestdeal':
+        request_dict['Населенный пункт'] = city_name_extract(
+                                                    call_dict=call.json,
+                                                    id_search=call.data)
+
+        if request_dict['Команда'] == '/bestdeal':
             bot.set_state(call.from_user.id, SurveyStates.min_price)
             bot.send_message(call.from_user.id,
                              'Введите минимальную стоимость за сутки (руб)')
@@ -85,7 +89,7 @@ def calendar_in(call: CallbackQuery) -> None:
         )
         bot.set_state(call.from_user.id, SurveyStates.check_out)
         with bot.retrieve_data(call.from_user.id) as request_dict:
-            request_dict['check_in'] = result
+            request_dict['Дата заезда'] = result
 
         calendar_bot, step = DetailedTelegramCalendar().build()
         bot.send_message(chat_id=call.from_user.id,
@@ -117,14 +121,14 @@ def calendar_out(call: CallbackQuery) -> None:
                                   chat_id=call.message.chat.id,
                                   message_id=call.message.message_id,
                                   reply_markup=key)
-        elif is_valid_date(result) and result > request_dict['check_in']:
+        elif is_valid_date(result) and result > request_dict['Дата заезда']:
             bot.edit_message_text(
                 text=f"Выбранная дата выезда: {format_date(result)}",
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id)
 
             bot.set_state(call.from_user.id, SurveyStates.amount_of_suggestion)
-            request_dict['check_out'] = result
+            request_dict['Дата выезда'] = result
 
             bot.send_message(chat_id=call.from_user.id,
                              text=f'Сколько выводить предложений '
@@ -149,7 +153,7 @@ def min_price(message: Message) -> None:
     if message.text.isdigit() and int(message.text) > 0:
         bot.set_state(message.from_user.id, SurveyStates.max_price)
         with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['min_price'] = message.text
+            request_data['Минимальная цена'] = message.text
         bot.send_message(chat_id=message.from_user.id,
                          text='Введите максимальную стоимость за сутки (руб)')
     else:
@@ -165,7 +169,7 @@ def max_price(message: Message) -> None:
     if message.text.isdigit() and int(message.text) > 0:
         bot.set_state(message.from_user.id, SurveyStates.distance)
         with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['max_price'] = message.text
+            request_data['Максимальная цена'] = message.text
         bot.send_message(chat_id=message.from_user.id,
                          text='Введите максимальное удаление от центра (км)')
     else:
@@ -182,7 +186,7 @@ def get_distance(message: Message) -> None:
     if message.text.isdigit() and float(message.text) >= 0:
         bot.set_state(message.from_user.id, SurveyStates.check_in)
         with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['distance'] = message.text
+            request_data['Расстояние до центра'] = message.text
 
         calendar_bot, step = DetailedTelegramCalendar().build()
         bot.send_message(chat_id=message.from_user.id,
@@ -200,7 +204,7 @@ def get_amount(message: Message) -> None:
         """
     if message.text.isdigit() and int(message.text) <= MAX_HOTELS:
         with bot.retrieve_data(message.from_user.id) as request_dict:
-            request_dict['amount_of_suggestion'] = message.text
+            request_dict['Кол-во предложений'] = message.text
         dict_of_states = {
             'Да': 'yes',
             'Нет': 'no'
@@ -244,7 +248,7 @@ def get_photo_amount(message: Message) -> None:
     if message.text.isdigit() and int(message.text) <= MAX_PHOTOS:
 
         with bot.retrieve_data(message.from_user.id) as request_dict:
-            request_dict['amount_of_photos'] = int(message.text)
+            request_dict['Кол-во фотографий'] = int(message.text)
 
         display_results(user_id=message.from_user.id)
         bot.delete_state(message.from_user.id)
