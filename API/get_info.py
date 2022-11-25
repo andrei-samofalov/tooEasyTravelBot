@@ -132,8 +132,11 @@ def display_results(user_id: int) -> None:
     Результат отправляется в загруженного из loader бота в импортах
 
     """
+
+    bot.send_message(chat_id=user_id,
+                     text='Ваш запрос обрабатывается...')
+
     with bot.retrieve_data(user_id) as request_dict:
-        bot.send_message(user_id, 'Ваш запрос обрабатывается...')
 
         results = hotel_search(
             city_id=request_dict.get('destination_id'),
