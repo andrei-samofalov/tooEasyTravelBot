@@ -21,12 +21,21 @@ def bot_help(message: Message):
         'Для справки введи команду /help'
     ]
     bot.send_message(message.from_user.id, '\n\n'.join(text))
+    bot.delete_state(message.from_user.id)
 
 
 @bot.message_handler(commands=['help'])
 def bot_help(message: Message):
     text = [f'/{command} - {desk}' for command, desk in DEFAULT_COMMANDS]
     bot.send_message(message.from_user.id, '\n'.join(text))
+
+
+@bot.message_handler(commands=['state'])
+def get_state(message: Message):
+    try:
+        bot.send_message(message.from_user.id, bot.get_state(message.from_user.id))
+    except:
+        pass
 
 
 
