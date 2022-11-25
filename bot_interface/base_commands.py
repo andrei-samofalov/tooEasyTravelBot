@@ -2,6 +2,7 @@ from telebot.types import BotCommand, Message
 
 from loader import bot
 from settings.config import DEFAULT_COMMANDS
+from settings.states import SurveyStates
 
 
 def base_commands(my_bot):
@@ -21,13 +22,14 @@ def bot_help(message: Message):
         'Для справки введи команду /help'
     ]
     bot.send_message(message.from_user.id, '\n\n'.join(text))
-    bot.delete_state(message.from_user.id)
+    bot.set_state(message.from_user.id, SurveyStates.echo)
 
 
 @bot.message_handler(commands=['help'])
 def bot_help(message: Message):
     text = [f'/{command} - {desk}' for command, desk in DEFAULT_COMMANDS]
     bot.send_message(message.from_user.id, '\n'.join(text))
+    bot.set_state(message.from_user.id, SurveyStates.echo)
 
 
 @bot.message_handler(commands=['state'])
