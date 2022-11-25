@@ -7,8 +7,8 @@ from typing import Dict
 import requests
 
 from bot_interface.custom_functions import photos_output, total_cost
-from database.data_load import (load_to_dict, load_to_json, new_user,
-                                collected_data)
+from database.data_load import (collected_data, load_to_dict, load_to_json,
+                                new_user)
 from loader import bot
 from settings.config import (headers, sort_order, url_city, url_hotel,
                              url_photos)

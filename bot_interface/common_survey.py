@@ -1,12 +1,12 @@
 from telebot.types import CallbackQuery, Message
 from telegram_bot_calendar import DetailedTelegramCalendar
-from loader import bot
 
-from API.get_info import city_search, is_valid_date, display_results
-from bot_interface.custom_functions import format_date, city_name_extract
+from API.get_info import city_search, display_results, is_valid_date
+from bot_interface.custom_functions import city_name_extract, format_date
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
+from loader import bot
+from settings.config import INT_ERROR, MAX_HOTELS, MAX_PHOTOS, NUM_ERROR
 from settings.states import SurveyStates
-from settings.config import MAX_PHOTOS, MAX_HOTELS, NUM_ERROR, INT_ERROR
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
