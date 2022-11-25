@@ -20,6 +20,5 @@ def date_error(bot: TeleBot, call: CallbackQuery, current_state: str):
 
     with bot.retrieve_data(call.from_user.id) as request_data:
         request_data['current_state'] = current_state
-        print('func', end=' ')
-        print(request_data['current_state'])
+
     bot.set_state(call.from_user.id, SurveyStates.date_error)
