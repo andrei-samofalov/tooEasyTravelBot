@@ -56,6 +56,11 @@ def city_input_details(call: CallbackQuery) -> None:
         request_dict['Населенный пункт'] = city_name_extract(
                                                     call_dict=call.json,
                                                     id_search=call.data)
+        bot.edit_message_text(
+            text=f"Выбранный населенный пункт: {request_dict['Населенный пункт']}",
+            chat_id=call.from_user.id,
+            message_id=call.message.message_id
+        )
 
         if request_dict['Команда'] == '/bestdeal':
             bot.set_state(call.from_user.id, SurveyStates.min_price)
@@ -228,10 +233,18 @@ def get_photo(call: CallbackQuery) -> None:
         """
     if call.data == 'yes':
         bot.set_state(call.from_user.id, SurveyStates.amount_of_photos)
-        bot.send_message(chat_id=call.from_user.id,
-                         text=f'Какое количество фотографий? (до {MAX_PHOTOS})')
+        bot.edit_message_text(
+            text=f'Какое количество фотографий? (до {MAX_PHOTOS})',
+            chat_id=call.from_user.id,
+            message_id=call.message.message_id
+
+        )
 
     elif call.data == 'no':
+        bot.delete_message(
+            chat_id=call.from_user.id,
+            message_id=call.message.message_id
+        )
 
         display_results(user_id=call.from_user.id)
         bot.delete_state(call.from_user.id)
