@@ -1,5 +1,1 @@
-from . import (
-    inline_keyboard,
-    stop_this_madness,
-    calendar
-)
+from . import calendar, inline_keyboard, stop_this_madness

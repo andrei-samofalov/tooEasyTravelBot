@@ -1,12 +1,16 @@
-import requests
+import json
 import time
 from datetime import datetime
-import json
+from http import HTTPStatus
 from typing import Dict
-from loader import bot
-from settings.config import headers, url_city, url_hotel, url_photos, sort_order
+
+import requests
+
 from bot_interface.custom_functions import photos_output, total_cost
-from database.data_load import load_to_json, load_to_dict, new_user
+from database.data_load import load_to_dict, load_to_json, new_user
+from loader import bot
+from settings.config import (headers, sort_order, url_city, url_hotel,
+                             url_photos)
 
 
 def city_search(city: str) -> Dict:
@@ -17,7 +21,7 @@ def city_search(city: str) -> Dict:
     response = requests.request(
         method='GET', url=url_city, headers=headers, params=query
     )
-    if response.status_code == 200:
+    if response.status_code == HTTPStatus.OK:
         dict_city_response = json.loads(response.text)
         dict_city_response = dict_city_response['suggestions'][0]['entities']
 
@@ -71,7 +75,7 @@ def hotel_search(city_id: int, check_in: str, check_out: str,
     response = requests.request(
         method="GET", url=url_hotel, headers=headers, params=querystring
     )
-    if response.status_code == 200:
+    if response.status_code == HTTPStatus.OK:
         hotels = json.loads(response.text)
         hotels = hotels['data']['body']['searchResults']['results']
 
@@ -81,7 +85,7 @@ def hotel_search(city_id: int, check_in: str, check_out: str,
         print(f'Ошибка {response.status_code}')
 
 
-def photo_search(hotel_id) -> Dict:
+def photo_search(hotel_id) -> Dict | int:
     """
     Запрос к API сайта для получения ссылок на фотографии
 
@@ -93,13 +97,19 @@ def photo_search(hotel_id) -> Dict:
     response = requests.request(
         method="GET", url=url_photos, headers=headers, params=querystring
     )
-    if response.status_code == 200:
+    if response.status_code == HTTPStatus.OK:
         return json.loads(response.text)
     else:
         print(f'Ошибка {response.status_code}')
+        return response.status_code
 
 
-def is_valid_date(date) -> bool:
+def is_valid_date(date: datetime) -> bool:
+    """
+    Проверка даты на формат и то, чтобы не была раньше текущей
+    :param date: datetime
+    :return: bool
+    """
     try:
         if date > datetime.today().date():
             return True
@@ -110,9 +120,11 @@ def is_valid_date(date) -> bool:
 def display_results(user_id: int) -> None:
     """
 
-    Функция обращается к каждому отелю функцией photo_search, для каждого отеля формирует данные, выводимые в чат бота
+    Функция обращается к каждому отелю функцией photo_search,
+    для каждого отеля формирует данные, выводимые в чат бота
 
-    :param user_id: ID пользователя, полученного из message.from_user.id или call.from_user.id
+    :param user_id: ID пользователя, полученного из message.from_user.id
+    или call.from_user.id
     :return: None
     Результат отправляется в загруженного из loader бота в импортах
 
@@ -134,10 +146,20 @@ def display_results(user_id: int) -> None:
         if results:
             for item in results:
                 if request_dict.get('amount_of_photos'):
-                    hotel_photos = photo_search(item['id'])
-                    if hotel_photos:
-                        hotel_photos = photos_output(hotel_photos, amount=request_dict.get('amount_of_photos', 0))
-                        bot.send_media_group(user_id, hotel_photos)
+                    hotel_photos = photo_search(hotel_id=item['id'])
+
+                    # если полученный результат - словарь, то преобразовать в
+                    # телеграм-медиа и выгрузить в чат
+
+                    if isinstance(hotel_photos, dict):
+                        hotel_photos = photos_output(
+                            photos=hotel_photos,
+                            amount=request_dict.get('amount_of_photos', 0)
+                        )
+                        bot.send_media_group(chat_id=user_id, media=hotel_photos)
+                    else:
+                        bot.send_message(chat_id=user_id,
+                                         text='Не удалось загрузить фотографии')
 
                 cost_of_journey = total_cost(
                     check_in=request_dict.get('check_in'),
@@ -158,10 +180,13 @@ def display_results(user_id: int) -> None:
                                         time=time.strftime('%d.%m.%y %H:%M'),
                                         data_list=display)
 
-                bot.send_message(user_id, '\n'.join(display), disable_web_page_preview=True)
+                bot.send_message(chat_id=user_id, text='\n'.join(display),
+                                 disable_web_page_preview=True)
                 time.sleep(1)
             else:
-                load_to_json(user_id, new_dict)
-                bot.send_message(user_id, f'Все результаты выгружены')
+                load_to_json(user_id=user_id, user_dict=new_dict)
+                bot.send_message(chat_id=user_id,
+                                 text='Все результаты выгружены')
         else:
-            bot.send_message(user_id, 'По запросу ничего не найдено')
+            bot.send_message(chat_id=user_id,
+                             text='По запросу ничего не найдено')

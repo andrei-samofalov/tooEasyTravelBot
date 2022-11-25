@@ -1,5 +1,6 @@
 import os
-from dotenv import load_dotenv, find_dotenv
+
+from dotenv import find_dotenv, load_dotenv
 
 if not find_dotenv():
     exit('Переменные окружения не загружены, т.к. отсутствует файл .env')
@@ -35,3 +36,6 @@ sort_order = {
     '/highprice': 'PRICE_HIGHEST_FIRST',
     '/bestdeal': 'DISTANCE_FROM_LANDMARK'
 }
+
+MAX_HOTELS = 25
+MAX_PHOTOS = 10

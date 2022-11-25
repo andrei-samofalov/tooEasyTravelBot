@@ -1,6 +1,7 @@
-from settings.config import DEFAULT_COMMANDS
 from telebot.types import BotCommand, Message
+
 from loader import bot
+from settings.config import DEFAULT_COMMANDS
 
 
 def base_commands(my_bot):

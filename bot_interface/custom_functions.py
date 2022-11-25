@@ -1,5 +1,6 @@
-from telebot.types import InputMediaPhoto
 from datetime import datetime
+
+from telebot.types import InputMediaPhoto
 
 
 def photos_output(photos: dict, amount=0) -> list[InputMediaPhoto]:

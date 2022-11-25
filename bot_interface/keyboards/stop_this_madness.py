@@ -1,5 +1,4 @@
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ForceReply
-from typing import Tuple, Any
+from telebot.types import KeyboardButton, ReplyKeyboardMarkup
 
 
 def keyboard(states: list[str]):

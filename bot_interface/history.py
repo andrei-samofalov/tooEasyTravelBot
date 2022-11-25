@@ -1,8 +1,10 @@
-import time
-from loader import bot
-from telebot.types import Message
-from settings.states import SurveyStates
 import json
+import time
+
+from telebot.types import Message
+
+from loader import bot
+from settings.states import SurveyStates
 
 
 @bot.message_handler(commands=['history'])

@@ -1,7 +1,2 @@
-from . import (
-    common_survey,
-    history,
-    keyboards,
-    base_commands,
-    custom_functions
-)
+from . import (base_commands, common_survey, custom_functions, history,
+               keyboards)
