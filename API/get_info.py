@@ -16,6 +16,8 @@ from settings.config import (headers, sort_order, url_city, url_hotel,
 def city_search(city: str) -> Dict:
     """
     Запрос к API сайта для получения списка возможных совпадений по запросу города
+    :param city: str, ID местоположения
+    :return dict
     """
     query = {'query': city, 'locale': 'ru_RU', 'currency': 'RUB'}
     response = requests.request(
