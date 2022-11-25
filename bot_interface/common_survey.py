@@ -4,8 +4,10 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 from API.get_info import city_search, display_results, is_valid_date
 from bot_interface.custom_functions import city_name_extract, format_date
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
+from error_bot_handlers import date_error
 from loader import bot
-from settings.config import INT_ERROR, MAX_HOTELS, MAX_PHOTOS, NUM_ERROR
+from settings.config import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
+                             NUM_ERROR)
 from settings.states import SurveyStates
 
 
@@ -81,11 +83,15 @@ def calendar_in(call: CallbackQuery) -> None:
         запрашивает дату выезда
         """
     result, key, step = DetailedTelegramCalendar().process(call.data)
+    current_state = bot.get_state(call.from_user.id)
+
     if not result and key:
-        bot.edit_message_text(text="Выберите дату заезда",
-                              chat_id=call.message.chat.id,
-                              message_id=call.message.message_id,
-                              reply_markup=key)
+        bot.edit_message_text(
+            text=f"{DATE_CONFIG.get(current_state).get('text')}",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=key)
+
     elif is_valid_date(result):
         bot.edit_message_text(
             text=f"Выбранная дата заезда: {format_date(result)}",
@@ -101,15 +107,7 @@ def calendar_in(call: CallbackQuery) -> None:
                          text="Выберите дату выезда",
                          reply_markup=calendar_bot)
     else:
-        bot.edit_message_text(
-            text='Можно выбрать дату, начиная с завтрашней',
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id)
-
-        calendar_bot, step = DetailedTelegramCalendar().build()
-        bot.send_message(chat_id=call.from_user.id,
-                         text="Выберите дату заезда",
-                         reply_markup=calendar_bot)
+        date_error(bot, call, current_state)
 
 
 @bot.callback_query_handler(state=SurveyStates.check_out,
@@ -119,13 +117,17 @@ def calendar_out(call: CallbackQuery) -> None:
         запрашивает количество предложений, которые необходимо отобразить
         """
     result, key, step = DetailedTelegramCalendar().process(call.data)
+    current_state = bot.get_state(call.from_user.id)
+
     with bot.retrieve_data(call.from_user.id) as request_dict:
 
         if not result and key:
-            bot.edit_message_text(text="Выберите дату выезда",
-                                  chat_id=call.message.chat.id,
-                                  message_id=call.message.message_id,
-                                  reply_markup=key)
+            bot.edit_message_text(
+                text=f"{DATE_CONFIG.get(current_state).get('text')}",
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                reply_markup=key)
+
         elif is_valid_date(result) and result > request_dict['Дата заезда']:
             bot.edit_message_text(
                 text=f"Выбранная дата выезда: {format_date(result)}",
@@ -139,15 +141,29 @@ def calendar_out(call: CallbackQuery) -> None:
                              text=f'Сколько выводить предложений '
                                   f'(максимум {MAX_HOTELS})?')
         else:
-            bot.edit_message_text(text='Дата выезда может быть не ранее даты заезда '
-                                       'плюс один день',
-                                  chat_id=call.message.chat.id,
-                                  message_id=call.message.message_id)
+            date_error(bot, call, current_state)
 
-            calendar_bot, step = DetailedTelegramCalendar().build()
-            bot.send_message(chat_id=call.from_user.id,
-                             text="Выберите дату выезда",
-                             reply_markup=calendar_bot)
+
+@bot.callback_query_handler(func=None, state=SurveyStates.date_error)
+def date_error_handler(call: CallbackQuery) -> None:
+    """Колбэк, ожидающий, что пользователь нажмет 'понятно'
+        """
+
+    with bot.retrieve_data(call.from_user.id) as request_data:
+        current_state = request_data['current_state']
+        del request_data['current_state']
+
+    if call.data == 'got_it':
+        bot.delete_message(chat_id=call.from_user.id,
+                           message_id=call.message.message_id)
+
+        calendar_bot, step = DetailedTelegramCalendar().build()
+        bot.send_message(
+            chat_id=call.from_user.id,
+            text=f"{DATE_CONFIG.get(current_state).get('text')}",
+            reply_markup=calendar_bot
+        )
+        bot.set_state(call.from_user.id, current_state)
 
 
 @bot.message_handler(state=SurveyStates.min_price)
@@ -237,7 +253,6 @@ def get_photo(call: CallbackQuery) -> None:
             text=f'Какое количество фотографий? (до {MAX_PHOTOS})',
             chat_id=call.from_user.id,
             message_id=call.message.message_id
-
         )
 
     elif call.data == 'no':
@@ -266,11 +281,3 @@ def get_photo_amount(message: Message) -> None:
     else:
         bot.send_message(chat_id=message.from_user.id,
                          text=f'{INT_ERROR} до {MAX_PHOTOS} включительно')
-
-
-@bot.message_handler(content_types=['text'], state=SurveyStates.echo)
-def echo(message: Message) -> None:
-    """ Хэндлер, реагирует на любые сообщения пользователя вне опроса
-        """
-    bot.send_message(chat_id=message.from_user.id,
-                     text='Проверьте ввод, для справки /help')
