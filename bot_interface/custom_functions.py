@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from telebot.types import InputMediaPhoto
+from telebot.types import CallbackQuery
 
 
 def photos_output(photos: dict, amount=0) -> list[InputMediaPhoto]:
@@ -23,3 +24,13 @@ def total_cost(check_in: datetime, check_out: datetime, cost: float) -> int:
     """ Функция для подсчета общей стоимости проживания """
     days = check_out - check_in
     return round(cost * days.days)
+
+
+def city_name_extract(call_dict: dict, id_search: str) -> str | None:
+    """ Функция для извлечения названия населенного пункта,
+        выбранного пользователем
+        """
+    for elem in call_dict['message']['reply_markup']['inline_keyboard']:
+        for item in elem:
+            if id_search == item['callback_data']:
+                return item['text']
