@@ -34,7 +34,8 @@ def city_input_clarify(message: Message) -> None:
         markup = inline_keyboard(states=dict_of_cities, row_width=1)
         bot.send_message(
             chat_id=message.from_user.id,
-            text='Уточните запрос',
+            text='Вот, что удалось найти.\nВыберите подходящий вариант '
+                 'или введите новый населенный пункт.',
             reply_markup=markup
         )
     else:
@@ -152,8 +153,7 @@ def date_error_handler(call: CallbackQuery) -> None:
         """
 
     with bot.retrieve_data(call.from_user.id) as request_data:
-        print('handler', end=' ')
-        print(request_data['current_state'])
+
         current_state = request_data['current_state']
         del request_data['current_state']
 
@@ -264,9 +264,8 @@ def get_photo(call: CallbackQuery) -> None:
             chat_id=call.from_user.id,
             message_id=call.message.message_id
         )
-
+        bot.set_state(call.from_user.id, SurveyStates.echo)
         display_results(user_id=call.from_user.id)
-        bot.delete_state(call.from_user.id)
 
 
 @bot.message_handler(state=SurveyStates.amount_of_photos)
@@ -279,8 +278,8 @@ def get_photo_amount(message: Message) -> None:
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['Кол-во фотографий'] = int(message.text)
 
+        bot.set_state(message.from_user.id, SurveyStates.echo)
         display_results(user_id=message.from_user.id)
-        bot.delete_state(message.from_user.id)
 
     else:
         bot.send_message(chat_id=message.from_user.id,
