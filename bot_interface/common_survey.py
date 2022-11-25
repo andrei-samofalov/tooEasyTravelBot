@@ -3,8 +3,8 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 
 from API.get_info import city_search, display_results, is_valid_date
 from bot_interface.custom_functions import city_name_extract, format_date
+from bot_interface.error_replies import date_error
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
-from error_bot_handlers import date_error
 from loader import bot
 from settings.config import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
                              NUM_ERROR)
@@ -116,32 +116,34 @@ def calendar_out(call: CallbackQuery) -> None:
     """ Хэндлер, календарь для выбора даты выезда
         запрашивает количество предложений, которые необходимо отобразить
         """
+    with bot.retrieve_data(call.from_user.id) as request_dict:
+        check_in = request_dict['Дата заезда']
+
     result, key, step = DetailedTelegramCalendar().process(call.data)
     current_state = bot.get_state(call.from_user.id)
 
-    with bot.retrieve_data(call.from_user.id) as request_dict:
+    if not result and key:
+        bot.edit_message_text(
+            text=f"{DATE_CONFIG.get(current_state).get('text')}",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=key)
 
-        if not result and key:
-            bot.edit_message_text(
-                text=f"{DATE_CONFIG.get(current_state).get('text')}",
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                reply_markup=key)
+    elif is_valid_date(result) and result > check_in:
+        bot.edit_message_text(
+            text=f"Выбранная дата выезда: {format_date(result)}",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id)
 
-        elif is_valid_date(result) and result > request_dict['Дата заезда']:
-            bot.edit_message_text(
-                text=f"Выбранная дата выезда: {format_date(result)}",
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id)
-
-            bot.set_state(call.from_user.id, SurveyStates.amount_of_suggestion)
+        bot.set_state(call.from_user.id, SurveyStates.amount_of_suggestion)
+        with bot.retrieve_data(call.from_user.id) as request_dict:
             request_dict['Дата выезда'] = result
 
-            bot.send_message(chat_id=call.from_user.id,
-                             text=f'Сколько выводить предложений '
-                                  f'(максимум {MAX_HOTELS})?')
-        else:
-            date_error(bot, call, current_state)
+        bot.send_message(chat_id=call.from_user.id,
+                         text=f'Сколько выводить предложений '
+                              f'(максимум {MAX_HOTELS})?')
+    else:
+        date_error(bot, call, current_state)
 
 
 @bot.callback_query_handler(func=None, state=SurveyStates.date_error)
@@ -150,6 +152,8 @@ def date_error_handler(call: CallbackQuery) -> None:
         """
 
     with bot.retrieve_data(call.from_user.id) as request_data:
+        print('handler', end=' ')
+        print(request_data['current_state'])
         current_state = request_data['current_state']
         del request_data['current_state']
 

@@ -15,7 +15,7 @@ def collected_data(survey_dict: dict) -> str:
     """ Функция для записи собранных данных опроса """
     display = []
     for k, v in survey_dict.items():
-        if k != 'destination_id':
+        if k != ('destination_id' or 'current_state'):
             display.append(f'{k}: {v}')
     return '\n'.join(display)
 
