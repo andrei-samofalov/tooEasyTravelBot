@@ -10,8 +10,8 @@ from bot_interface.custom_functions import photos_output, total_cost
 from database.data_load import (collected_data, load_to_dict, load_to_json,
                                 new_user)
 from loader import bot
-from settings.config import (headers, sort_order, url_city, url_hotel,
-                             url_photos)
+from settings.config import (ECHO_MESSAGE, headers, sort_order, url_city,
+                             url_hotel, url_photos)
 
 
 def city_search(city: str) -> Dict:
@@ -151,22 +151,6 @@ def display_results(user_id: int) -> None:
         user_dict = new_user(user_id=user_id)
         if results:
             for item in results:
-                if request_dict.get('Кол-во фотографий'):
-                    hotel_photos = photo_search(hotel_id=item['id'])
-
-                    # если полученный результат - словарь, то преобразовать в
-                    # телеграм-медиа и выгрузить в чат
-
-                    if isinstance(hotel_photos, dict):
-                        hotel_photos = photos_output(
-                            photos=hotel_photos,
-                            amount=request_dict.get('Кол-во фотографий', 0)
-                        )
-                        bot.send_media_group(chat_id=user_id, media=hotel_photos)
-                    else:
-                        bot.send_message(chat_id=user_id,
-                                         text='Не удалось загрузить фотографии')
-
                 cost_of_journey = total_cost(
                     check_in=request_dict.get('Дата заезда'),
                     check_out=request_dict.get('Дата выезда'),
@@ -187,13 +171,33 @@ def display_results(user_id: int) -> None:
                                         time=time.strftime('%d.%m.%y %H:%M'),
                                         data_list=display)
 
-                bot.send_message(chat_id=user_id, text='\n'.join(display),
-                                 disable_web_page_preview=True)
-                time.sleep(1)
+                if request_dict.get('Кол-во фотографий'):
+                    hotel_photos = photo_search(hotel_id=item['id'])
+
+                    # если полученный результат - словарь, то преобразовать в
+                    # телеграм-медиа и выгрузить в чат
+
+                    if isinstance(hotel_photos, dict):
+                        hotel_photos = photos_output(
+                            photos=hotel_photos,
+                            amount=request_dict.get('Кол-во фотографий', 0),
+                            caption='\n'.join(display)
+                        )
+                        bot.send_media_group(chat_id=user_id, media=hotel_photos)
+                    else:
+                        bot.send_message(chat_id=user_id,
+                                         text='Не удалось загрузить фотографии')
+                    bot.send_message(chat_id=user_id, text='\n'.join(display),
+                                     disable_web_page_preview=True)
+                    time.sleep(1)
             else:
                 load_to_json(user_id=user_id, user_dict=new_dict)
-                bot.send_message(chat_id=user_id,
-                                 text='Все результаты выгружены')
+                bot.send_message(
+                    chat_id=user_id,
+                    text='Все результаты выгружены.\n' + ECHO_MESSAGE
+                )
         else:
-            bot.send_message(chat_id=user_id,
-                             text='По запросу ничего не найдено')
+            bot.send_message(
+                chat_id=user_id,
+                text='По запросу ничего не найдено.\n' + ECHO_MESSAGE
+            )
