@@ -29,7 +29,7 @@ DEFAULT_COMMANDS = (
     ('highprice', 'Вывести список самых дорогих отелей'),
     ('bestdeal', 'Вывести список отелей по заданным параметрам'),
     ('history', 'Показать историю поиска отелей'),
-    ('clear_echo', 'Очистить чат от мусора')
+    ('remove_garbage', 'Очистить чат от мусора')
 )
 
 sort_order = {
@@ -38,6 +38,7 @@ sort_order = {
     '/bestdeal': 'DISTANCE_FROM_LANDMARK'
 }
 
+MIN_NUM = 1
 MAX_HOTELS = 25
 MAX_PHOTOS = 10
 
