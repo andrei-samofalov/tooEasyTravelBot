@@ -112,6 +112,10 @@ def is_valid_date(date: datetime) -> bool:
         return False
 
 
+def is_distance_match():
+    pass
+
+
 def display_results(user_id: int) -> None:
     """
 

@@ -38,11 +38,11 @@ def city_name_extract(call_dict: dict, id_search: str) -> str | None:
 
 
 def trash_message(bot: TeleBot, message: Message | CallbackQuery) -> None:
-    # with bot.retrieve_data(message.from_user.id) as request_data:
-    #     if request_data.get('msg_to_delete') is None:
-    #         request_data['msg_to_delete'] = [message.message_id]
-    #     else:
-    #         request_data['msg_to_delete'].append(message.message_id)
+    with bot.retrieve_data(message.from_user.id) as request_data:
+        if request_data.get('msg_to_delete') is None:
+            request_data['msg_to_delete'] = [message.message_id]
+        else:
+            request_data['msg_to_delete'].append(message.message_id)
     bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id)
 
 

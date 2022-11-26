@@ -222,7 +222,6 @@ def get_amount(message: Message) -> None:
     """ Хэндлер, реагирует на введенное количество выводимых предложений,
         запрашивает необходимость отображения фотографий
         """
-    # delete_echo_messages(bot, message.from_user.id)
     if message.text.isdigit() and int(message.text) <= MAX_HOTELS:
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['Кол-во предложений'] = message.text
