@@ -12,7 +12,13 @@ def photos_output(photos: dict, caption: str, amount=0) -> list[InputMediaPhoto]
         InputMediaPhoto(photo['baseUrl'].replace('{size}', 'z'), caption=caption, parse_mode='html')
         for photo in photos['hotelImages']
     ]
-    return photos_list[:amount]
+    photos_wo_caption = [
+        InputMediaPhoto(photo['baseUrl'].replace('{size}', 'z'))
+        for photo in photos['hotelImages']
+    ]
+    first_photo = photos_list[:1]
+    other_photos = photos_wo_caption[1:amount]
+    return first_photo + other_photos
 
 
 def format_date(date: datetime) -> datetime.date:
