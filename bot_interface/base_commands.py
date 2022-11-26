@@ -14,7 +14,7 @@ def base_commands(my_bot):
 
 @bot.message_handler(commands=['start'])
 def bot_help(message: Message):
-    delete_echo_messages(bot, message.from_user.id)
+
     text = [
         'Приветствую тебя, путник!',
         'Этот бот поможет тебе найти отель твоей мечты по всему миру (пока кроме России).',

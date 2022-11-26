@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from telebot import TeleBot, apihelper
+# from telebot.apihelper import ApiTelegramException
 from telebot.types import CallbackQuery, InputMediaPhoto, Message
 
 
@@ -48,9 +49,10 @@ def delete_echo_messages(bot: TeleBot, user_id: str | int) -> None:
     """ Функция удаляет все сообщения, полученные в режиме echo """
     try:
         with bot.retrieve_data(user_id) as request_data:
-            for message_id in request_data.get('msg_to_delete', []):
-                bot.delete_message(user_id, message_id)
-            else:
-                request_data['msg_to_delete'] = []
+            if request_data:
+                for message_id in request_data.get('msg_to_delete', []):
+                    bot.delete_message(user_id, message_id)
+                else:
+                    request_data['msg_to_delete'] = []
     except (KeyError, apihelper.ApiTelegramException):
-        pass
+        print('Хранилище памяти еще не инициализировано')

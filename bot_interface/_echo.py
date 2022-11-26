@@ -7,6 +7,7 @@ from settings.states import SurveyStates
 
 @bot.message_handler(state=SurveyStates.echo)
 def echo(message: Message) -> None:
-    """ Хэндлер, реагирует на любые сообщения пользователя вне опроса """
+    """ Хэндлер, реагирует на любые сообщения пользователя вне опроса.
+        Заносит ID этих сообщений в хранилище памяти """
     trash_message(bot, message)
 

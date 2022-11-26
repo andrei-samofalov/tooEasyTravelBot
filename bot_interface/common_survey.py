@@ -18,7 +18,6 @@ def city_input(message: Message) -> None:
     """ Хэндлер, реагирует на команды 'lowprice', 'highprice', 'bestdeal'
         запрашивает у пользователя искомый населенный пункт """
     delete_echo_messages(bot, message.from_user.id)
-    # bot.reset_data(message.from_user.id)
 
     bot.send_message(message.from_user.id, 'Введите название города')
     bot.set_state(message.from_user.id, SurveyStates.city_input)
@@ -287,6 +286,9 @@ def get_photo(call: CallbackQuery) -> None:
         )
 
     elif call.data == 'no':
+        with bot.retrieve_data(call.from_user.id) as request_dict:
+            request_dict['Кол-во фотографий'] = None
+
         bot.delete_message(
             chat_id=call.from_user.id,
             message_id=call.message.message_id
