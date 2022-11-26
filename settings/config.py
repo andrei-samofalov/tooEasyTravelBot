@@ -1,5 +1,6 @@
 import os
-from dotenv import load_dotenv, find_dotenv
+
+from dotenv import find_dotenv, load_dotenv
 
 if not find_dotenv():
     exit('Переменные окружения не загружены, т.к. отсутствует файл .env')
@@ -27,11 +28,33 @@ DEFAULT_COMMANDS = (
     ('lowprice', 'Вывести список самых дешевых отелей'),
     ('highprice', 'Вывести список самых дорогих отелей'),
     ('bestdeal', 'Вывести список отелей по заданным параметрам'),
-    ('history', 'Показать историю поиска отелей')
+    ('history', 'Показать историю поиска отелей'),
+    ('clear_echo', 'Очистить чат от мусора')
 )
 
 sort_order = {
     '/lowprice': 'PRICE',
     '/highprice': 'PRICE_HIGHEST_FIRST',
     '/bestdeal': 'DISTANCE_FROM_LANDMARK'
+}
+
+MAX_HOTELS = 25
+MAX_PHOTOS = 10
+
+NUM_ERROR = 'Необходимо ввести любое число больше нуля'
+INT_ERROR = 'Необходимо ввести целое число больше нуля'
+
+ECHO_MESSAGE = 'Воспользуйтесь меню бота для продолжения.\n' \
+               'Команды бота: /help'
+
+DATE_CONFIG = {
+    'SurveyStates:check_in': {
+        "text": 'Выберите дату заезда',
+        "error_text": 'Можно выбрать дату, начиная с завтрашней'
+    },
+    'SurveyStates:check_out': {
+        "text": 'Выберите дату выезда',
+        "error_text": 'Дата выезда может быть не ранее '
+                      'даты заезда плюс один день'
+    }
 }
