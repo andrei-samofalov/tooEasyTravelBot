@@ -46,20 +46,12 @@ def hotel_search(city_id: int, check_in: str, check_out: str,
         :param city_id
         :param check_in
         :param check_out
-        :param sort
-            BEST_SELLER |
-            STAR_RATING_HIGHEST_FIRST |
-            STAR_RATING_LOWEST_FIRST |
-            DISTANCE_FROM_LANDMARK |
-            GUEST_RATING |
-            PRICE_HIGHEST_FIRST |
-            PRICE
         :param max_price
         :param min_price
         :param amount_of_suggestion
         :param command
 
-        :return словарь с отелями
+        :return dict: словарь с отелями
     """
 
     querystring = {

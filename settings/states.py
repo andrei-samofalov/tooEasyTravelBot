@@ -14,4 +14,3 @@ class SurveyStates(StatesGroup):
     min_price = State()
     echo = State()
     history = State()
-    date_error = State()
