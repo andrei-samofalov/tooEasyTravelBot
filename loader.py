@@ -10,4 +10,3 @@ bot = telebot.TeleBot(
     parse_mode='html',
     state_storage=state_storage
 )
-

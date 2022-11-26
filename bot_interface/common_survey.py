@@ -3,11 +3,11 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 
 from API.get_info import city_search, display_results, is_valid_date
 from bot_interface.custom_functions import (city_name_extract,
-                                            format_date)
+                                            format_date, trash_message)
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
 from loader import bot
 from settings.config import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
-                             NUM_ERROR)
+                             NUM_ERROR, MIN_NUM)
 from settings.states import SurveyStates
 
 
@@ -40,6 +40,7 @@ def city_input_clarify(message: Message) -> None:
             reply_markup=markup
         )
     else:
+        trash_message(bot, message)
         bot.send_message(
             chat_id=message.from_user.id,
             text='По запросу ничего не найдено, '
@@ -154,8 +155,8 @@ def calendar_out(call: CallbackQuery) -> None:
             request_dict['Дата выезда'] = result
 
         bot.send_message(chat_id=call.from_user.id,
-                         text=f'Сколько выводить предложений '
-                              f'(максимум {MAX_HOTELS})?')
+                         text=f'Сколько выводить предложений?'
+                              f'\n(от {MIN_NUM} до {MAX_HOTELS})')
     else:
 
         bot.answer_callback_query(
@@ -177,6 +178,7 @@ def min_price(message: Message) -> None:
         bot.send_message(chat_id=message.from_user.id,
                          text='Введите максимальную стоимость за сутки (руб)')
     else:
+        trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=NUM_ERROR)
 
@@ -193,6 +195,7 @@ def max_price(message: Message) -> None:
         bot.send_message(chat_id=message.from_user.id,
                          text='Введите максимальное удаление от центра (км)')
     else:
+        trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=NUM_ERROR)
 
@@ -213,6 +216,7 @@ def get_distance(message: Message) -> None:
                          text="Выберите дату заезда",
                          reply_markup=calendar_bot)
     else:
+        trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=NUM_ERROR)
 
@@ -222,7 +226,7 @@ def get_amount(message: Message) -> None:
     """ Хэндлер, реагирует на введенное количество выводимых предложений,
         запрашивает необходимость отображения фотографий
         """
-    if message.text.isdigit() and int(message.text) <= MAX_HOTELS:
+    if message.text.isdigit() and MIN_NUM <= int(message.text) <= MAX_HOTELS:
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['Кол-во предложений'] = message.text
         dict_of_states = {
@@ -235,6 +239,7 @@ def get_amount(message: Message) -> None:
                          reply_markup=markup)
         bot.set_state(message.from_user.id, SurveyStates.get_photos)
     else:
+        trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=f'{INT_ERROR} до {MAX_HOTELS} включительно')
 
@@ -251,7 +256,7 @@ def get_photo(call: CallbackQuery) -> None:
 
         bot.set_state(call.from_user.id, SurveyStates.amount_of_photos)
         bot.edit_message_text(
-            text=f'Какое количество фотографий? (до {MAX_PHOTOS})',
+            text=f'Какое количество фотографий?\n (от {MIN_NUM} до {MAX_PHOTOS})',
             chat_id=call.from_user.id,
             message_id=call.message.message_id
         )
@@ -273,7 +278,7 @@ def get_photo_amount(message: Message) -> None:
     """ Хэндлер, реагирует на введенное количество фотографий,
         запускает функцию display_results
         """
-    if message.text.isdigit() and int(message.text) <= MAX_PHOTOS:
+    if message.text.isdigit() and MIN_NUM <= int(message.text) <= MAX_PHOTOS:
 
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['Кол-во фотографий'] = int(message.text)
@@ -282,5 +287,6 @@ def get_photo_amount(message: Message) -> None:
         display_results(user_id=message.from_user.id)
 
     else:
+        trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=f'{INT_ERROR} до {MAX_PHOTOS} включительно')

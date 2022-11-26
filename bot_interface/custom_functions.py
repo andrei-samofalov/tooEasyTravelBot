@@ -12,10 +12,11 @@ def photos_output(photos: dict, caption: str, amount=0) -> list[InputMediaPhoto]
         InputMediaPhoto(photo['baseUrl'].replace('{size}', 'z'), caption=caption, parse_mode='html')
         for photo in photos['hotelImages']
     ]
+
     photos_wo_caption = [
         InputMediaPhoto(photo['baseUrl'].replace('{size}', 'z'))
-        for photo in photos['hotelImages']
-    ]
+        if amount > 1 else [] for photo in photos['hotelImages']
+        ]
     first_photo = photos_list[:1]
     other_photos = photos_wo_caption[1:amount]
     return first_photo + other_photos
@@ -52,7 +53,7 @@ def trash_message(bot: TeleBot, message: Message | CallbackQuery) -> None:
     bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id)
 
 
-def delete_echo_messages(bot: TeleBot, user_id: str | int) -> None:
+def delete_trash_messages(bot: TeleBot, user_id: str | int) -> None:
     """ Функция удаляет все сообщения, полученные в режиме echo """
     try:
         with bot.retrieve_data(user_id) as request_data:
