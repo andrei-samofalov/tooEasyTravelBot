@@ -3,6 +3,7 @@ import time
 
 from telebot.types import Message
 
+from bot_interface.custom_functions import delete_echo_messages
 from loader import bot
 from settings.config import INT_ERROR
 from settings.states import SurveyStates
@@ -12,6 +13,7 @@ from settings.states import SurveyStates
 def history(message: Message) -> None:
     """ Хэндлер, реагирует на команду /history,
         запрашивает количество отелей, которые нужно отобразить """
+    delete_echo_messages(bot, message.from_user.id)
     bot.send_message(chat_id=message.from_user.id,
                      text='Какое количество последних запросов вывести?')
     bot.set_state(message.from_user.id, SurveyStates.history)
@@ -33,6 +35,7 @@ def get_history(message: Message) -> None:
                 text='База данных еще не сформирована, сделайте свой первый запрос '
                      '\n/help - справка'
             )
+            bot.set_state(message.from_user.id, SurveyStates.echo)
         else:
 
             for user in json_db:
@@ -40,13 +43,14 @@ def get_history(message: Message) -> None:
                     user_requests = len(user.get('requests', []))
                     request_amount = user_requests - amount
                     if request_amount >= 0:
+                        bot.set_state(message.from_user.id, SurveyStates.echo)
                         for request in user['requests'][request_amount:]:
                             display = [f'<u>{k}</u>\n{v}' for k, v in request.items()]
                             bot.send_message(chat_id=message.from_user.id,
                                              text='\n\n'.join(display),
                                              disable_web_page_preview=True)
                             time.sleep(1)
-                            bot.delete_state(message.from_user.id)
+
                         break
                     else:
                         bot.send_message(
@@ -59,7 +63,9 @@ def get_history(message: Message) -> None:
                 bot.send_message(
                     chat_id=message.from_user.id,
                     text='Вы еще не делали запросов, самое время это сделать!'
-                         '\n/help - справка')
+                         '\n/help - справка'
+                )
+                bot.set_state(message.from_user.id, SurveyStates.echo)
 
     else:
         bot.send_message(chat_id=message.from_user.id,

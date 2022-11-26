@@ -151,11 +151,13 @@ def display_results(user_id: int) -> None:
         user_dict = new_user(user_id=user_id)
         if results:
             for item in results:
+                print('запускается расчет стоимости всей поездки')
                 cost_of_journey = total_cost(
                     check_in=request_dict.get('Дата заезда'),
                     check_out=request_dict.get('Дата выезда'),
                     cost=item.get('ratePlan', {}).get('price', {}).get('exactCurrent', 0)
                 )
+                print('формируется тест сообщения')
                 display_list = [
                     ('<b>Название</b>', f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>"),
                     ('<b>Оценка</b>', f"{item.get('guestReviews', {}).get('rating', '-')}"
@@ -172,12 +174,14 @@ def display_results(user_id: int) -> None:
                                         data_list=display)
 
                 if request_dict.get('Кол-во фотографий'):
+                    print('поиск фото')
                     hotel_photos = photo_search(hotel_id=item['id'])
 
                     # если полученный результат - словарь, то преобразовать в
                     # телеграм-медиа и выгрузить в чат
 
                     if isinstance(hotel_photos, dict):
+                        print('преобразуются фотографии')
                         hotel_photos = photos_output(
                             photos=hotel_photos,
                             amount=request_dict.get('Кол-во фотографий', 0),
@@ -187,9 +191,10 @@ def display_results(user_id: int) -> None:
                     else:
                         bot.send_message(chat_id=user_id,
                                          text='Не удалось загрузить фотографии')
-                    bot.send_message(chat_id=user_id, text='\n'.join(display),
-                                     disable_web_page_preview=True)
-                    time.sleep(1)
+
+                bot.send_message(chat_id=user_id, text='\n'.join(display),
+                                 disable_web_page_preview=True)
+                time.sleep(1)
             else:
                 load_to_json(user_id=user_id, user_dict=new_dict)
                 bot.send_message(

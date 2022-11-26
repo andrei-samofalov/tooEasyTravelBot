@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from telebot.types import InputMediaPhoto
+from telebot import TeleBot, apihelper
+from telebot.types import CallbackQuery, InputMediaPhoto, Message
 
 
 def photos_output(photos: dict, caption: str, amount=0) -> list[InputMediaPhoto]:
@@ -33,3 +34,23 @@ def city_name_extract(call_dict: dict, id_search: str) -> str | None:
         for item in elem:
             if id_search == item['callback_data']:
                 return item['text']
+
+
+def trash_message(bot: TeleBot, message: Message | CallbackQuery) -> None:
+    with bot.retrieve_data(message.from_user.id) as request_data:
+        if request_data.get('msg_to_delete') is None:
+            request_data['msg_to_delete'] = [message.message_id]
+        else:
+            request_data['msg_to_delete'].append(message.message_id)
+
+
+def delete_echo_messages(bot: TeleBot, user_id: str | int) -> None:
+    """ Функция удаляет все сообщения, полученные в режиме echo """
+    try:
+        with bot.retrieve_data(user_id) as request_data:
+            for message_id in request_data.get('msg_to_delete', []):
+                bot.delete_message(user_id, message_id)
+            else:
+                request_data['msg_to_delete'] = []
+    except (KeyError, apihelper.ApiTelegramException):
+        pass
