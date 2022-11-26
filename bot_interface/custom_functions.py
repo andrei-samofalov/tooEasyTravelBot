@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from telebot import TeleBot, apihelper
-# from telebot.apihelper import ApiTelegramException
+from telebot import TeleBot
+from telebot.apihelper import ApiTelegramException
 from telebot.types import CallbackQuery, InputMediaPhoto, Message
 
 
@@ -54,5 +54,5 @@ def delete_echo_messages(bot: TeleBot, user_id: str | int) -> None:
                     bot.delete_message(user_id, message_id)
                 else:
                     request_data['msg_to_delete'] = []
-    except (KeyError, apihelper.ApiTelegramException):
+    except (KeyError, ApiTelegramException):
         print('Хранилище памяти еще не инициализировано')
