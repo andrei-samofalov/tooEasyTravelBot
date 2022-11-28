@@ -7,7 +7,7 @@ from bot_interface.custom_functions import (city_name_extract,
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
 from loader import bot
 from settings.config import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
-                             NUM_ERROR, MIN_NUM)
+                             MIN_NUM)
 from settings.states import SurveyStates
 
 
@@ -16,6 +16,7 @@ def city_input(message: Message) -> None:
     """ Хэндлер, реагирует на команды 'lowprice', 'highprice', 'bestdeal'
         запрашивает у пользователя искомый населенный пункт """
 
+    bot.reset_data(message.from_user.id)
     bot.send_message(message.from_user.id, 'Введите название города')
     bot.set_state(message.from_user.id, SurveyStates.city_input)
     with bot.retrieve_data(message.from_user.id) as request_dict:
@@ -180,7 +181,7 @@ def min_price(message: Message) -> None:
     else:
         trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
-                         text=NUM_ERROR)
+                         text=INT_ERROR)
 
 
 @bot.message_handler(state=SurveyStates.max_price)
@@ -188,7 +189,10 @@ def max_price(message: Message) -> None:
     """ Хэндлер, часть опроса bestdeal, реагирует на введенную
         максимальную стоимость, запрашивает максимальное удаление от центра
         """
-    if message.text.isdigit() and int(message.text) > 0:
+    with bot.retrieve_data(message.from_user.id) as request_data:
+        minimal_price = int(request_data['Минимальная цена'])
+
+    if message.text.isdigit() and int(message.text) >= minimal_price:
         bot.set_state(message.from_user.id, SurveyStates.distance)
         with bot.retrieve_data(message.from_user.id) as request_data:
             request_data['Максимальная цена'] = message.text
@@ -197,7 +201,8 @@ def max_price(message: Message) -> None:
     else:
         trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
-                         text=NUM_ERROR)
+                         text=f'{INT_ERROR} не меньше указанной Вами '
+                              f'минимальной цены.')
 
 
 @bot.message_handler(state=SurveyStates.distance)
@@ -206,7 +211,7 @@ def get_distance(message: Message) -> None:
         максимальное удаление от центра, запрашивает дату заезда,
         опрос bestdeal вливается в общий опрос lowprice и highprice
         """
-    if message.text.isdigit() and float(message.text) >= 0:
+    if message.text.isdigit() and int(message.text) > 0:
         bot.set_state(message.from_user.id, SurveyStates.check_in)
         with bot.retrieve_data(message.from_user.id) as request_data:
             request_data['Расстояние до центра'] = message.text
@@ -218,7 +223,7 @@ def get_distance(message: Message) -> None:
     else:
         trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
-                         text=NUM_ERROR)
+                         text=INT_ERROR)
 
 
 @bot.message_handler(state=SurveyStates.amount_of_suggestion)
@@ -262,8 +267,6 @@ def get_photo(call: CallbackQuery) -> None:
         )
 
     elif call.data == 'no':
-        with bot.retrieve_data(call.from_user.id) as request_dict:
-            request_dict['Кол-во фотографий'] = None
 
         bot.delete_message(
             chat_id=call.from_user.id,
