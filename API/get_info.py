@@ -108,7 +108,7 @@ def is_valid_date(date: datetime) -> bool:
     try:
         if date > datetime.today().date():
             return True
-    except ValueError:
+    except (ValueError, TypeError):
         return False
 
 
