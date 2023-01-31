@@ -1,3 +1,5 @@
+import time
+
 from telebot.types import CallbackQuery, Message
 from telegram_bot_calendar import DetailedTelegramCalendar
 
@@ -6,9 +8,9 @@ from bot_interface.custom_functions import (city_name_extract,
                                             format_date, trash_message)
 from bot_interface.keyboards.inline_keyboard import inline_keyboard
 from loader import bot
-from settings.config import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
-                             MIN_NUM)
-from settings.states import SurveyStates
+from settings import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
+                      MIN_NUM, SurveyStates)
+from database import db_connection, cursor, ADD_USER_REQUEST_TO_DB_SQL
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -61,8 +63,8 @@ def city_input_details(call: CallbackQuery) -> None:
     with bot.retrieve_data(call.from_user.id) as request_dict:
         request_dict['destination_id'] = int(call.data)
         request_dict['Населенный пункт'] = city_name_extract(
-                                                    call_dict=call.json,
-                                                    id_search=call.data)
+            call_dict=call.json,
+            id_search=call.data)
         bot.edit_message_text(
             text=f"Выбранный населенный пункт: {request_dict['Населенный пункт']}",
             chat_id=call.from_user.id,
@@ -285,6 +287,26 @@ def get_photo_amount(message: Message) -> None:
 
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['Кол-во фотографий'] = int(message.text)
+            print(request_dict)
+
+            with db_connection:
+                cursor.execute(
+                    ADD_USER_REQUEST_TO_DB_SQL,
+                    (
+                        message.from_user.id,
+                        request_dict.get('Команда'),
+                        time.time(),
+                        request_dict.get('destination_id'),
+                        request_dict.get('Населенный пункт'),
+                        request_dict.get('Дата заезда'),
+                        request_dict.get('Дата выезда'),
+                        request_dict.get('Минимальная цена'),
+                        request_dict.get('Максимальная цена'),
+                        request_dict.get('Расстояние до центра'),
+                        request_dict.get('Кол-во предложений'),
+                        request_dict.get('Кол-во фотографий')
+                    )
+                )
 
         bot.set_state(message.from_user.id, SurveyStates.echo)
         display_results(user_id=message.from_user.id)
