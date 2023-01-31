@@ -1,21 +1,14 @@
-import sqlite3
-
-
-def create_table_users(c: sqlite3.Cursor) -> None:
-    c.executescript("""
-    begin transaction;
+CREATE_TABLE_USERS_SQL = """
     CREATE TABLE IF NOT EXISTS `users` (
     id INTEGER PRIMARY KEY,
     first_name TEXT,
     last_name TEXT,
     username TEXT,
     language_code TEXT);
-    commit
-    """)
+"""
 
 
-def create_table_sessions(c: sqlite3.Cursor) -> None:
-    c.executescript("""
+CREATE_TABLE_SESSIONS_SQL = """
     create table if not exists `sessions` (
     id integer primary key autoincrement,
     user_id integer references users(id),
@@ -31,11 +24,11 @@ def create_table_sessions(c: sqlite3.Cursor) -> None:
     offer_amount integer,
     photo_amount integer
     )
-    """)
+"""
 
 
 ADD_USER_TO_DB_SQL = """
-    insert or ignore into users (id, first_name, last_name, 
+    insert into users (id, first_name, last_name, 
                                 username, language_code) 
     VALUES (?, ?, ?, ?, ?) 
 """
