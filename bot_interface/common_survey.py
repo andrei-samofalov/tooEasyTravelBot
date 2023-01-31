@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 
 from telebot.types import CallbackQuery, Message
 from telegram_bot_calendar import DetailedTelegramCalendar
@@ -6,11 +7,11 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 from API.get_info import city_search, display_results, is_valid_date
 from bot_interface.custom_functions import (city_name_extract,
                                             format_date, trash_message)
-from bot_interface.keyboards.inline_keyboard import inline_keyboard
+from bot_interface.keyboards import inline_keyboard
+from database import db_connection, cursor, add_request_to_db
 from loader import bot
 from settings import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
-                      MIN_NUM, SurveyStates)
-from database import db_connection, cursor, ADD_USER_REQUEST_TO_DB_SQL
+                      MIN_NUM, SurveyStates, logger)
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -23,6 +24,7 @@ def city_input(message: Message) -> None:
     bot.set_state(message.from_user.id, SurveyStates.city_input)
     with bot.retrieve_data(message.from_user.id) as request_dict:
         request_dict['Команда'] = message.text
+        logger.info(f'Command {message.text}')
 
 
 @bot.message_handler(state=SurveyStates.city_input)
@@ -275,6 +277,15 @@ def get_photo(call: CallbackQuery) -> None:
             message_id=call.message.message_id
         )
         bot.set_state(call.from_user.id, SurveyStates.echo)
+        with bot.retrieve_data(call.from_user.id) as request_dict:
+            add_request_to_db(
+                db_connection,
+                cursor,
+                user_id=call.from_user.id,
+                timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
+                request_dict=request_dict)
+            logger.info('Request from user recorded to DB')
+
         display_results(user_id=call.from_user.id)
 
 
@@ -287,26 +298,14 @@ def get_photo_amount(message: Message) -> None:
 
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['Кол-во фотографий'] = int(message.text)
-            print(request_dict)
 
-            with db_connection:
-                cursor.execute(
-                    ADD_USER_REQUEST_TO_DB_SQL,
-                    (
-                        message.from_user.id,
-                        request_dict.get('Команда'),
-                        time.time(),
-                        request_dict.get('destination_id'),
-                        request_dict.get('Населенный пункт'),
-                        request_dict.get('Дата заезда'),
-                        request_dict.get('Дата выезда'),
-                        request_dict.get('Минимальная цена'),
-                        request_dict.get('Максимальная цена'),
-                        request_dict.get('Расстояние до центра'),
-                        request_dict.get('Кол-во предложений'),
-                        request_dict.get('Кол-во фотографий')
-                    )
-                )
+            add_request_to_db(
+                db_connection,
+                cursor,
+                user_id=message.from_user.id,
+                timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
+                request_dict=request_dict)
+            logger.info('Request from user recorded to DB')
 
         bot.set_state(message.from_user.id, SurveyStates.echo)
         display_results(user_id=message.from_user.id)
