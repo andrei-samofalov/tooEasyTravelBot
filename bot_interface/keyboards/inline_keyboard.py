@@ -1,9 +1,7 @@
-from typing import Dict
-
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def inline_keyboard(states: Dict[str, str], row_width: int = 2) -> InlineKeyboardMarkup:
+def inline_keyboard(states: dict[str, str], row_width: int = 2) -> InlineKeyboardMarkup:
     """
     Функция для создания клавиатур типа Inline
 
