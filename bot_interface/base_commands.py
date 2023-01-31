@@ -2,8 +2,8 @@ from telebot.types import BotCommand, Message
 
 from bot_interface.custom_functions import delete_trash_messages
 from loader import bot
-from settings.config import DEFAULT_COMMANDS, HELP_MESSAGE
-from settings.states import SurveyStates
+from database import cursor, db_connection, ADD_USER_TO_DB_SQL
+from settings import DEFAULT_COMMANDS, HELP_MESSAGE, SurveyStates, logger
 
 
 def base_commands(my_bot):
@@ -14,6 +14,20 @@ def base_commands(my_bot):
 
 @bot.message_handler(commands=['start'])
 def bot_help(message: Message):
+
+    user = message.from_user
+    with db_connection:
+        cursor.execute(
+            ADD_USER_TO_DB_SQL,
+            (
+                user.id,
+                user.first_name,
+                user.last_name,
+                user.username,
+                user.language_code
+            )
+        )
+    logger.debug(f'User {user.id} was registered')
 
     text = [
         'Приветствую тебя, путник!',
