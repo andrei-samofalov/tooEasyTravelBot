@@ -17,7 +17,9 @@
 каталог.
 
 2. Установите все библиотеки из [requirements.txt](requirements.txt).
-Вы можете использовать команду `pip install -r requirements.txt`
+Вы можете использовать команду 
+
+   `pip install -r requirements.txt`
 
 3. Файл .env.template переименуйте в .env. Откройте 
 его и заполните необходимые данные (токен бота 
