@@ -34,9 +34,9 @@ RapidAPI получить на сайте [RapidAPI](https://rapidapi.com/hub)).
 1. Вы должны быть зарегистрированы на сайте [Dockerhub](https://hub.docker.com/), также необходимо пройти аутентификацию (`$ docker login`)
 2. Находясь в папке с приложением, введите команды 
 
-    `$ docker build -t <image_name> .` 
+    `$ docker build -t <image_name> .` где <image_name> - название образа, а "." (точка) - папка, где необходимо искать докерфайл (Dockerfile)
     
-    `$ docker tag <image_name> <your_login/image_rep>`
+    `$ docker tag <image_name> <your_login>/<image_rep>` где <your_login> - Ваш логин на DockerHub, <image_rep> - название репозитория на DockerHub
     
     `$ docker push <your_login/image_rep>`
 
