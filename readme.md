@@ -29,7 +29,7 @@ RapidAPI получить на сайте [RapidAPI](https://rapidapi.com/hub)).
 4. Запустите файл [main.py](main.py).
 
 ### Установка на удаленном сервере Linux:
-1. Установите [Docker](https://docs.docker.com/engine/install/ubuntu/)
+1. Установите [Docker](https://docs.docker.com/engine/install/ubuntu/) на удаленном сервере
 2. Введите в терминале команду `$ docker run andreisamofalov/tg_bot`
 
 #### Создание собственного образа Docker:
