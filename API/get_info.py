@@ -2,19 +2,16 @@ import json
 import time
 from datetime import datetime
 from http import HTTPStatus
-from typing import Dict
 
 import requests
 
 from bot_interface.custom_functions import photos_output, total_cost
-from database.data_load import (collected_data, load_to_dict, load_to_json,
-                                new_user)
 from loader import bot
-from settings.config import (ECHO_MESSAGE, headers, sort_order, url_city,
-                             url_hotel, url_photos)
+from settings import (ECHO_MESSAGE, headers, sort_order, url_city,
+                      url_hotel, url_photos, logger)
 
 
-def city_search(city: str) -> Dict:
+def city_search(city: str) -> dict:
     """
     Запрос к API сайта для получения списка возможных совпадений по запросу города
     :param city: str, ID местоположения
@@ -34,13 +31,12 @@ def city_search(city: str) -> Dict:
 
         return dict_city_destination
     else:
-        print(f'Ошибка запроса {response.status_code}')
+        logger.error(f'Error {response.status_code}')
 
 
 def hotel_search(city_id: int, check_in: str, check_out: str,
                  amount_of_suggestion: int, command: str,
-                 max_price: str = '1000000', min_price: str = '1') -> Dict:
-
+                 max_price: str = '1000000', min_price: str = '1') -> dict:
     """
         Запрос к API сайта для получения списка отелей
         :param city_id
@@ -77,10 +73,10 @@ def hotel_search(city_id: int, check_in: str, check_out: str,
         return hotels
 
     else:
-        print(f'Ошибка {response.status_code}')
+        logger.error(f'Error {response.status_code}')
 
 
-def photo_search(hotel_id) -> Dict | int:
+def photo_search(hotel_id) -> dict:
     """
     Запрос к API сайта для получения ссылок на фотографии
 
@@ -95,8 +91,7 @@ def photo_search(hotel_id) -> Dict | int:
     if response.status_code == HTTPStatus.OK:
         return json.loads(response.text)
     else:
-        print(f'Ошибка {response.status_code}')
-        return response.status_code
+        logger.error(f'Error {response.status_code}')
 
 
 def is_valid_date(date: datetime) -> bool:
@@ -144,7 +139,6 @@ def display_results(user_id: int) -> None:
             min_price=request_dict.get('Минимальная цена'),
         )
 
-        user_dict = new_user(user_id=user_id)
         if results:
             for item in results:
 
@@ -166,16 +160,13 @@ def display_results(user_id: int) -> None:
                 ]
                 display = [f'{key}: {value}' for key, value in display_list]
 
-                new_dict = load_to_dict(user_dict=user_dict, command=collected_data(request_dict),
-                                        time=time.strftime('%d.%m.%y %H:%M'), data_list=display)
-
                 if request_dict.get('Кол-во фотографий'):
                     hotel_photos = photo_search(hotel_id=item['id'])
 
                     # если полученный результат - словарь, то преобразовать в
                     # телеграм-медиа и выгрузить в чат
 
-                    if isinstance(hotel_photos, dict):
+                    if hotel_photos:
                         hotel_photos = photos_output(
                             photos=hotel_photos,
                             amount=request_dict.get('Кол-во фотографий', 0),
@@ -188,9 +179,8 @@ def display_results(user_id: int) -> None:
                 else:
                     bot.send_message(chat_id=user_id, text='\n'.join(display),
                                      disable_web_page_preview=True)
-                time.sleep(1)
+                time.sleep(0.5)
             else:
-                load_to_json(user_id=user_id, user_dict=new_dict)
                 bot.send_message(
                     chat_id=user_id,
                     text='Все результаты выгружены.\n' + ECHO_MESSAGE
