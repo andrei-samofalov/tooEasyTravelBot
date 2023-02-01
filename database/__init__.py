@@ -1,6 +1,5 @@
 import sqlite3
 
-from . import data_load  # depricated
 from .sql_functions import add_user_to_db, add_request_to_db
 from .sql_scripts import (CREATE_TABLE_SESSIONS_SQL, CREATE_TABLE_USERS_SQL,
                           ADD_USER_REQUEST_TO_DB_SQL, ADD_USER_TO_DB_SQL)
