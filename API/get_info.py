@@ -7,8 +7,8 @@ import requests
 
 from bot_interface.custom_functions import photos_output, total_cost
 from loader import bot
-from settings import (ECHO_MESSAGE, headers, sort_order, url_city,
-                      url_hotel, url_photos, logger)
+from settings import (ECHO_MESSAGE, headers, logger, sort_order, url_city,
+                      url_hotel, url_photos)
 
 
 def city_search(city: str) -> dict:
