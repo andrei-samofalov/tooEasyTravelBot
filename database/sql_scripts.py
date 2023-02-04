@@ -1,10 +1,34 @@
-CREATE_TABLE_USERS_SQL = """
+CREATE_TABLES = """
+    BEGIN TRANSACTION;
     CREATE TABLE IF NOT EXISTS `users` (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name TEXT,
     last_name TEXT,
     username TEXT,
-    language_code TEXT);
+    language_code TEXT
+    );
+    CREATE TABLE IF NOT EXISTS `sessions` (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    command TEXT,
+    query_time TEXT,
+    destination_id INTEGER,
+    destination_name TEXT,
+    check_in TEXT,
+    check_out TEXT,
+    min_price INTEGER,
+    max_price INTEGER,
+    distance INTEGER,
+    offer_amount INTEGER,
+    photo_amount INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS `misc` (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES `users`(id),
+    message TEXT,
+    `timestamp` TEXT
+    );
+    COMMIT;
 """
 
 
