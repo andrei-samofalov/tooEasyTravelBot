@@ -3,9 +3,8 @@ import time
 from telebot.types import CallbackQuery, Message
 from telegram_bot_calendar import DetailedTelegramCalendar
 
+import bot_interface as bi
 from API import city_search, display_results, is_valid_date
-from bot_interface import (city_name_extract, format_date,
-                           inline_keyboard, trash_message)
 from database import add_request_to_db
 from loader import bot
 from settings import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
@@ -35,7 +34,7 @@ def city_input_clarify(message: Message) -> None:
 
     dict_of_cities = city_search(message.text)
     if dict_of_cities:
-        markup = inline_keyboard(states=dict_of_cities, row_width=2)
+        markup = bi.inline_keyboard(states=dict_of_cities, row_width=2)
         bot.send_message(
             chat_id=message.from_user.id,
             text='Вот, что удалось найти.\nВыберите подходящий вариант '
@@ -43,7 +42,7 @@ def city_input_clarify(message: Message) -> None:
             reply_markup=markup
         )
     else:
-        trash_message(bot, message)
+        bi.trash_message(bot, message)
         bot.send_message(
             chat_id=message.from_user.id,
             text='По запросу ничего не найдено, '
@@ -62,7 +61,7 @@ def city_input_details(call: CallbackQuery) -> None:
 
     with bot.retrieve_data(call.from_user.id) as request_dict:
         request_dict['destination_id'] = int(call.data)
-        request_dict['Населенный пункт'] = city_name_extract(
+        request_dict['Населенный пункт'] = bi.city_name_extract(
             call_dict=call.json,
             id_search=call.data)
         bot.edit_message_text(
@@ -104,7 +103,7 @@ def calendar_in(call: CallbackQuery) -> None:
     elif is_valid_date(result):
 
         bot.edit_message_text(
-            text=f"Выбранная дата заезда: {format_date(result)}",
+            text=f"Выбранная дата заезда: {bi.format_date(result)}",
             chat_id=call.message.chat.id,
             message_id=call.message.message_id
         )
@@ -149,7 +148,7 @@ def calendar_out(call: CallbackQuery) -> None:
     elif is_valid_date(result) and result > check_in:
 
         bot.edit_message_text(
-            text=f"Выбранная дата выезда: {format_date(result)}",
+            text=f"Выбранная дата выезда: {bi.format_date(result)}",
             chat_id=call.message.chat.id,
             message_id=call.message.message_id)
 
@@ -181,7 +180,7 @@ def min_price(message: Message) -> None:
         bot.send_message(chat_id=message.from_user.id,
                          text='Введите максимальную стоимость за сутки (руб)')
     else:
-        trash_message(bot, message)
+        bi.trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=INT_ERROR)
 
@@ -201,7 +200,7 @@ def max_price(message: Message) -> None:
         bot.send_message(chat_id=message.from_user.id,
                          text='Введите максимальное удаление от центра (км)')
     else:
-        trash_message(bot, message)
+        bi.trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=f'{INT_ERROR} не меньше указанной Вами '
                               f'минимальной цены.')
@@ -223,7 +222,7 @@ def get_distance(message: Message) -> None:
                          text="Выберите дату заезда",
                          reply_markup=calendar_bot)
     else:
-        trash_message(bot, message)
+        bi.trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=INT_ERROR)
 
@@ -240,13 +239,13 @@ def get_amount(message: Message) -> None:
             'Да': 'yes',
             'Нет': 'no'
         }
-        markup = inline_keyboard(states=dict_of_states, row_width=1)
+        markup = bi.inline_keyboard(states=dict_of_states, row_width=1)
         bot.send_message(chat_id=message.from_user.id,
                          text='Загружать фотографии отелей?',
                          reply_markup=markup)
         bot.set_state(message.from_user.id, SurveyStates.get_photos)
     else:
-        trash_message(bot, message)
+        bi.trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=f'{INT_ERROR} до {MAX_HOTELS} включительно')
 
@@ -305,6 +304,6 @@ def get_photo_amount(message: Message) -> None:
         display_results(user_id=message.from_user.id)
 
     else:
-        trash_message(bot, message)
+        bi.trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=f'{INT_ERROR} до {MAX_PHOTOS} включительно')
