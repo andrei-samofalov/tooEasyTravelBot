@@ -1,1 +1,1 @@
-from . import get_info
+from .get_info import *
