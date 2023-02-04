@@ -1,8 +1,11 @@
+import time
 from datetime import datetime
 
 from telebot import TeleBot
 from telebot.apihelper import ApiTelegramException
 from telebot.types import CallbackQuery, InputMediaPhoto, Message
+
+from database import add_trash_message_to_db
 
 
 def photos_output(photos: dict, caption: str, amount=0) -> list[InputMediaPhoto]:
@@ -46,6 +49,8 @@ def city_name_extract(call_dict: dict, id_search: str) -> str | None:
 
 def trash_message(bot: TeleBot, message: Message | CallbackQuery) -> None:
     with bot.retrieve_data(message.from_user.id) as request_data:
+        curr_time = time.strftime("%d-%m-%Y %H:%M:%S")
+        add_trash_message_to_db(message, curr_time)
         if request_data.get('msg_to_delete') is None:
             request_data['msg_to_delete'] = [message.message_id]
         else:
