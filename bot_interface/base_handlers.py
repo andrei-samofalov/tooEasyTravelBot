@@ -16,7 +16,8 @@ def base_commands(my_bot):
 def bot_help(message: Message):
 
     user = message.from_user
-    if add_user_to_db(db_connection, cursor, user) is True:
+    if not is_user_in_database(user.id):
+        add_user_to_db(user)
         logger.info(f'User {user.id} was registered in DB')
 
     text = [
