@@ -7,10 +7,6 @@ import database.sql_scripts as sql
 from settings import DATABASE
 
 
-def create_connection():
-    return sqlite3.Connection(DATABASE)
-
-
 def db_touch(func: callable):
     @wraps(func)
     def sql_function(*args, **kwargs):
