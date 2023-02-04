@@ -65,3 +65,5 @@ DATE_CONFIG = {
                       'даты заезда плюс один день'
     }
 }
+
+DATABASE = os.getenv('DATABASE')
