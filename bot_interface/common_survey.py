@@ -279,8 +279,6 @@ def get_photo(call: CallbackQuery) -> None:
         bot.set_state(call.from_user.id, SurveyStates.echo)
         with bot.retrieve_data(call.from_user.id) as request_dict:
             add_request_to_db(
-                db_connection,
-                cursor,
                 user_id=call.from_user.id,
                 timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
                 request_dict=request_dict)
@@ -300,8 +298,6 @@ def get_photo_amount(message: Message) -> None:
             request_dict['Кол-во фотографий'] = int(message.text)
 
             add_request_to_db(
-                db_connection,
-                cursor,
                 user_id=message.from_user.id,
                 timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
                 request_dict=request_dict)
