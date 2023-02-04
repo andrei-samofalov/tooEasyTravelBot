@@ -86,7 +86,7 @@ def get_all_messages(c: sqlite3.Cursor) -> list[tuple]:
 @db_touch
 def is_user_in_database(c: sqlite3.Cursor, user_id: int) -> bool:
     c.execute(
-        sql.GET_USER_BY_ID,
+        sql.IS_USER_IN_DB,
         (user_id,)
     )
     return c.fetchone()[0]
