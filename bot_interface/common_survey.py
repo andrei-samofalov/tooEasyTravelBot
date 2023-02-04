@@ -1,14 +1,12 @@
 import time
-from datetime import datetime
 
 from telebot.types import CallbackQuery, Message
 from telegram_bot_calendar import DetailedTelegramCalendar
 
-from API.get_info import city_search, display_results, is_valid_date
-from bot_interface.custom_functions import (city_name_extract,
-                                            format_date, trash_message)
-from bot_interface.keyboards import inline_keyboard
-from database import db_connection, cursor, add_request_to_db
+from API import city_search, display_results, is_valid_date
+from bot_interface import (city_name_extract, format_date,
+                           inline_keyboard, trash_message)
+from database import add_request_to_db
 from loader import bot
 from settings import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
                       MIN_NUM, SurveyStates, logger)
