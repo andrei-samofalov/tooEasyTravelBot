@@ -1,3 +1,3 @@
 from .config import *
+from .logger import logger, set_logger
 from .states import SurveyStates
-from .logger import set_logger, logger
