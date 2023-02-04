@@ -32,36 +32,34 @@ CREATE_TABLES = """
 """
 
 
-CREATE_TABLE_SESSIONS_SQL = """
-    create table if not exists `sessions` (
-    id integer primary key autoincrement,
-    user_id integer references users(id),
-    command text,
-    query_time `timestamp`,
-    destination_id integer,
-    destination_name text,
-    check_in `timestamp`,
-    check_out `timestamp`,
-    min_price integer,
-    max_price integer,
-    distance integer,
-    offer_amount integer,
-    photo_amount integer
-    )
-"""
-
-
-ADD_USER_TO_DB_SQL = """
-    insert into users (id, first_name, last_name, 
+ADD_USER = """
+    insert or ignore into users (id, first_name, last_name, 
                                 username, language_code) 
     VALUES (?, ?, ?, ?, ?) 
 """
 
-ADD_USER_REQUEST_TO_DB_SQL = """
+IS_USER_IN_DB = """
+SELECT 
+    EXISTS(
+    SELECT * 
+        FROM users
+        WHERE id = ?);
+"""
+
+ADD_USER_REQUEST = """
     insert into `sessions` (user_id, command, query_time, 
                             destination_id, destination_name, 
                             check_in, check_out, min_price,
                             max_price, distance ,offer_amount, 
                             photo_amount)
     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+ADD_TRASH_MESSAGE = """
+INSERT INTO `misc` (user_id, message, `timestamp`) 
+VALUES (?, ?, ?);
+"""
+
+GET_USERS = """
+SELECT * FROM users;
 """
