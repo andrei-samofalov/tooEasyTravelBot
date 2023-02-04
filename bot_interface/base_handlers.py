@@ -1,8 +1,8 @@
 from telebot.types import BotCommand, Message
 
 from bot_interface.custom_functions import delete_trash_messages
+from database import add_user_to_db, is_user_in_database
 from loader import bot
-from database import db_connection, cursor, add_user_to_db
 from settings import DEFAULT_COMMANDS, HELP_MESSAGE, SurveyStates, logger
 
 
