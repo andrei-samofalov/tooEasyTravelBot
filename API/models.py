@@ -11,6 +11,7 @@ class Hotel:
         'center_range': '',
         'price': '',
         'cost': ''
+
     }
     def __init__(self, hotel_data: dict) -> None:
         # ('➡ <b>Название</b>', f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>"),
