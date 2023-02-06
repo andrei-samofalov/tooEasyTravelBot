@@ -38,10 +38,10 @@ def display_results(user_id: int) -> None:
                 display_hotel: str = hotel.display_data()
                 photos = request_dict.get('Кол-во фотографий')
 
-                # if photos:
-                #     hotel_hotel_and_photos = hotel.get_images(photos)
-                #     bot.send_media_group(chat_id=user_id, media=hotel_hotel_and_photos)
-                #     continue
+                if photos:
+                    hotel_hotel_and_photos = hotel.display_with_photos(photos)
+                    bot.send_media_group(chat_id=user_id, media=hotel_hotel_and_photos)
+                    continue
 
                 bot.send_message(
                     chat_id=user_id,
