@@ -1,7 +1,7 @@
 import time
 from datetime import date
 from http import HTTPStatus
-
+from multiprocessing import Semaphore, cpu_count
 import requests
 
 from settings import (headers, logger, sort_order, url_hotel_v2)
@@ -51,14 +51,14 @@ def hotel_search_v2(city_id: str, check_in: date, check_out: date,
         try:
             hotels = response.json()['data']['propertySearch']['properties']
             result = []
-            for h in hotels:
-                result.append(Hotel(h))
-            for i in result:
-                i.start()
-                time.sleep(0.01)
 
-            for i in result:
-                i.join()
+            with Semaphore(cpu_count()):
+                for h in hotels:
+                    result.append(Hotel(h))
+
+                for i in result:
+                    i.join()
+
             logger.info(f'Something goes right')
             return result
         except KeyError:
