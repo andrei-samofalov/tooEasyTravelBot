@@ -11,13 +11,17 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 RAPID_API_KEY = os.getenv('RAPID_API_KEY')
 
 # город, ID районов города
-url_city = "https://hotels4.p.rapidapi.com/locations/v2/search"
+url_city_v2 = "https://hotels4.p.rapidapi.com/locations/v2/search"
+url_city_v3 = 'https://hotels4.p.rapidapi.com/locations/v3/search'
+
 # ID города, гостиница, адрес, цена, удаленность от центра
 url_hotel = "https://hotels4.p.rapidapi.com/properties/list"
+url_hotel_v2 = "https://hotels4.p.rapidapi.com/properties/v2/list"
 # фото гостиницы по ID
-url_photos = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
+url_hotel_details = "https://hotels4.p.rapidapi.com/properties/v2/detail"
 
 headers = {
+    "content-type": "application/json",
     "X-RapidAPI-Host": "hotels4.p.rapidapi.com",
     "X-RapidAPI-Key": RAPID_API_KEY
 }
@@ -33,9 +37,9 @@ DEFAULT_COMMANDS = (
 )
 
 sort_order = {
-    '/lowprice': 'PRICE',
-    '/highprice': 'PRICE_HIGHEST_FIRST',
-    '/bestdeal': 'DISTANCE_FROM_LANDMARK'
+    '/lowprice': 'PRICE_LOW_TO_HIGH',
+    '/highprice': 'PRICE_HIGH_TO_LOW',
+    '/bestdeal': 'DISTANCE'
 }
 
 MIN_NUM = 1
@@ -67,3 +71,12 @@ DATE_CONFIG = {
 }
 
 DATABASE = os.getenv('DATABASE')
+
+# ('➡ <b>Название</b>', f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>"),
+# ('⭐ <b>Звездность</b>', item.get('starRating', 'Нет данных')),
+# ('🏆 <b>Оценка посетителей</b>', f"{item.get('guestReviews', {}).get('rating', '- ')}"
+#        f"/{item.get('guestReviews', {}).get('scale', ' -')}"),
+# ('🗺️ <b>Адрес</b>', item.get('address', {}).get('streetAddress', 'Нет данных')),
+# ('📌 <b>Расстояние до центра</b>', item.get('landmarks', [])[0].get('distance', 'Нет данных')),
+# ('💵 <b>Цена за ночь</b>', item.get('ratePlan', {}).get('price', {}).get('current', 'Нет данных')),
+# ('💰 <b>Общая стоимость проживания</b>', f'{cost_of_journey:,d} RUB')
