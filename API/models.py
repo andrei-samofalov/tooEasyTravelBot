@@ -6,6 +6,7 @@ from jsonpointer import resolve_pointer
 
 from settings import logger
 from .get_images_request import get_hotel_details
+from .api_functions import photos_output
 
 
 class Hotel(Thread):
@@ -36,10 +37,8 @@ class Hotel(Thread):
     def __init__(self, hotel_data: dict) -> None:
         super().__init__()
         self._data = hotel_data
-
-        logger.debug(f'{self.name}: {self._struct_data=}')
-        logger.debug(f'{self.name}: {self._address=}')
-        logger.debug(f'{self.name}: {self._images_url=}')
+        self.start()
+        time.sleep(0.01)
 
     def run(self) -> None:
         self._struct_data = self._resolve_data()
@@ -56,6 +55,9 @@ class Hotel(Thread):
             f"<b>{data}</b>: {value}"
             for data, value in self._struct_data.items()
         )
+
+    def display_with_photos(self, amount: int):
+        return photos_output(self._images_url, self.display_data(), amount)
 
     def _resolve_data(self) -> dict[str, Any]:
         return {
