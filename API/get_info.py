@@ -1,135 +1,113 @@
-import json
 import time
-from datetime import datetime
+from datetime import datetime, date
 from http import HTTPStatus
 
 import requests
 
-from bot_interface.custom_functions import photos_output, total_cost
 from loader import bot
-from settings import (ECHO_MESSAGE, headers, logger, sort_order, url_city,
-                      url_hotel, url_photos)
+from settings import (headers, logger, sort_order, url_city_v3, url_hotel_v2, ECHO_MESSAGE)
+from .models import Hotel
 
 
-def city_search(city: str) -> dict:
+def city_search_v3(city: str) -> dict:
     """
     Запрос к API сайта для получения списка возможных совпадений по запросу города
-    :param city: str, ID местоположения
+    :param city: str, ID местоположения.
     :return dict
     """
-    query = {'query': city, 'locale': 'ru_RU', 'currency': 'RUB'}
-    response = requests.request(
-        method='GET', url=url_city, headers=headers, params=query
-    )
+    querystring = {"q": city, "locale": "ru_RU"}
+    response = requests.request("GET", url_city_v3, headers=headers, params=querystring)
     if response.status_code == HTTPStatus.OK:
-        dict_city_response = json.loads(response.text)
-        dict_city_response = dict_city_response['suggestions'][0]['entities']
+        cities_list = response.json().get('sr', [])
 
         dict_city_destination = {}
-        for item in dict_city_response:
-            dict_city_destination[item['name']] = item['destinationId']
+        for item in cities_list:
+            if item['type'] == 'CITY':
+                dict_city_destination[
+                    item.get('regionNames', {}).get('displayName', 'Error')
+                ] = item.get('gaiaId', 0)
 
         return dict_city_destination
     else:
         logger.error(f'Error {response.status_code}')
 
 
-def hotel_search(city_id: int, check_in: str, check_out: str,
-                 amount_of_suggestion: int, command: str,
-                 max_price: str = '1000000', min_price: str = '1') -> dict:
+def hotel_search_v2(city_id: str, check_in: date, check_out: date,
+                    amount_of_suggestion: int, command: str,
+                    max_price: int = 1000000, min_price: int = 1) -> list[Hotel]:
     """
-        Запрос к API сайта для получения списка отелей
-        :param city_id
-        :param check_in
-        :param check_out
-        :param max_price
-        :param min_price
-        :param amount_of_suggestion
-        :param command
-
-        :return dict: словарь с отелями
+    Запрос к API сайта для получения списка отелей
     """
 
-    querystring = {
-        "destinationId": city_id,
-        "pageNumber": "1",
-        "pageSize": amount_of_suggestion,
-        "checkIn": check_in,
-        "checkOut": check_out,
-        "adults1": "1",
-        "sortOrder": sort_order[command],
-        "locale": "ru_RU",
+    payload = {
         "currency": "RUB",
-        "priceMin": min_price,
-        "priceMax": max_price,
+        "eapid": 1,
+        "locale": "ru_RU",
+        "siteId": 300000001,
+        "destination": {"regionId": city_id},
+        "checkInDate": {
+            "day": check_in.day,
+            "month": check_in.month,
+            "year": check_in.year
+        },
+        "checkOutDate": {
+            "day": check_out.day,
+            "month": check_out.month,
+            "year": check_out.year
+        },
+        "rooms": [
+            {
+                "adults": 1,
+                "children": []
+            }
+        ],
+        "resultsStartingIndex": 0,
+        "resultsSize": amount_of_suggestion,
+        "sort": sort_order[command],
+        "filters": {"price": {
+            "max": max_price,
+            "min": min_price
+        }}
     }
-    response = requests.request(
-        method="GET", url=url_hotel, headers=headers, params=querystring
-    )
+    response = requests.request("POST", url_hotel_v2, json=payload, headers=headers)
+    logger.debug(f'{response=}')
     if response.status_code == HTTPStatus.OK:
-        hotels = json.loads(response.text)
-        hotels = hotels['data']['body']['searchResults']['results']
-
-        return hotels
-
+        try:
+            hotels = response.json()['data']['propertySearch']['properties']
+            return [Hotel(*hotel) for hotel in hotels]
+        except KeyError:
+            return []
     else:
         logger.error(f'Error {response.status_code}')
 
 
-def photo_search(hotel_id) -> dict:
+def is_valid_date(d: date) -> bool:
     """
-    Запрос к API сайта для получения ссылок на фотографии
-
-    :param hotel_id: ID отеля из запроса hotel_search
-    :return: список ссылок на фотографии
-    """
-
-    querystring = {"id": str(hotel_id)}
-    response = requests.request(
-        method="GET", url=url_photos, headers=headers, params=querystring
-    )
-    if response.status_code == HTTPStatus.OK:
-        return json.loads(response.text)
-    else:
-        logger.error(f'Error {response.status_code}')
-
-
-def is_valid_date(date: datetime) -> bool:
-    """
-    Проверка даты на формат и то, чтобы не была раньше текущей
-    :param date: datetime
-    :return: bool
+    Проверка даты: формат, следование после текущей
     """
     try:
-        if date > datetime.today().date():
+        if d > datetime.today().date():
             return True
     except (ValueError, TypeError):
         return False
 
 
-def is_distance_match():
-    pass
-
-
 def display_results(user_id: int) -> None:
     """
-
-    Функция обращается к каждому отелю функцией photo_search,
+    Функция получает от API список отелей,
     для каждого отеля формирует данные, выводимые в чат бота
 
     :param user_id: ID пользователя, полученного из message.from_user.id
     или call.from_user.id
     :return: None
-    Результат отправляется в загруженного из loader бота в импортах
-
+    Результат отправляется в бота, импортируемого из модуля loader
     """
 
     bot.send_message(chat_id=user_id,
                      text='Ваш запрос обрабатывается...')
 
     with bot.retrieve_data(user_id) as request_dict:
-
-        results = hotel_search(
+        results: list[Hotel] = hotel_search_v2(
             city_id=request_dict.get('destination_id'),
             check_in=request_dict.get('Дата заезда'),
             check_out=request_dict.get('Дата выезда'),
@@ -138,48 +116,21 @@ def display_results(user_id: int) -> None:
             max_price=request_dict.get('Максимальная цена'),
             min_price=request_dict.get('Минимальная цена'),
         )
+        logger.debug(f'Response in Hotel-model: {results}')
 
         if results:
-            for item in results:
+            for hotel in results:
+                display_hotel: list = hotel.display_data()
+                photos = request_dict.get('Кол-во фотографий')
+                if photos:
+                    hotel_photos: list = hotel.get_images()
 
-                cost_of_journey = total_cost(
-                    check_in=request_dict.get('Дата заезда'),
-                    check_out=request_dict.get('Дата выезда'),
-                    cost=item.get('ratePlan', {}).get('price', {}).get('exactCurrent', 0)
-                )
-
-                display_list = [
-                    ('➡ <b>Название</b>', f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>"),
-                    ('⭐ <b>Звездность</b>', item.get('starRating', 'Нет данных')),
-                    ('🏆 <b>Оценка посетителей</b>', f"{item.get('guestReviews', {}).get('rating', '- ')}"
-                                                    f"/{item.get('guestReviews', {}).get('scale', ' -')}"),
-                    ('🗺️ <b>Адрес</b>', item.get('address', {}).get('streetAddress', 'Нет данных')),
-                    ('📌 <b>Расстояние до центра</b>', item.get('landmarks', [])[0].get('distance', 'Нет данных')),
-                    ('💵 <b>Цена за ночь</b>', item.get('ratePlan', {}).get('price', {}).get('current', 'Нет данных')),
-                    ('💰 <b>Общая стоимость проживания</b>', f'{cost_of_journey:,d} RUB')
-                ]
-                display = [f'{key}: {value}' for key, value in display_list]
-
-                if request_dict.get('Кол-во фотографий'):
-                    hotel_photos = photo_search(hotel_id=item['id'])
-
-                    # если полученный результат - словарь, то преобразовать в
-                    # телеграм-медиа и выгрузить в чат
-
-                    if hotel_photos:
-                        hotel_photos = photos_output(
-                            photos=hotel_photos,
-                            amount=request_dict.get('Кол-во фотографий', 0),
-                            caption='\n'.join(display)
-                        )
-                        bot.send_media_group(chat_id=user_id, media=hotel_photos)
-                    else:
-                        bot.send_message(chat_id=user_id,
-                                         text='Не удалось загрузить фотографии')
-                else:
-                    bot.send_message(chat_id=user_id, text='\n'.join(display),
-                                     disable_web_page_preview=True)
+                bot.send_message(
+                    chat_id=user_id,
+                    text='\n'.join(display_hotel),
+                    disable_web_page_preview=True)
                 time.sleep(0.5)
+
             else:
                 bot.send_message(
                     chat_id=user_id,
