@@ -3,10 +3,9 @@ import time
 
 from telebot.types import Message
 
-from bot_interface.custom_functions import delete_trash_messages
+from bot_interface import delete_trash_messages
 from loader import bot
-from settings.config import INT_ERROR
-from settings.states import SurveyStates
+from settings import INT_ERROR, SurveyStates
 
 
 @bot.message_handler(commands=['history'])

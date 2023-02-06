@@ -1,20 +1,13 @@
-from telebot.types import BotCommand, Message
+from telebot.types import Message
 
-from bot_interface.custom_functions import delete_trash_messages
+from .bot_functions import delete_trash_messages
 from database import add_user_to_db, is_user_in_database
 from loader import bot
 from settings import DEFAULT_COMMANDS, HELP_MESSAGE, SurveyStates, logger
 
 
-def base_commands(my_bot):
-    my_bot.set_my_commands(
-        [BotCommand(*i) for i in DEFAULT_COMMANDS]
-    )
-
-
 @bot.message_handler(commands=['start'])
 def bot_help(message: Message):
-
     user = message.from_user
     if not is_user_in_database(user.id):
         add_user_to_db(user)
