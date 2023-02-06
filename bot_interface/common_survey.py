@@ -4,7 +4,7 @@ from telebot.types import CallbackQuery, Message
 from telegram_bot_calendar import DetailedTelegramCalendar
 
 import bot_interface as bi
-from API import city_search, display_results, is_valid_date
+from API import city_search_v3, display_results, is_valid_date
 from database import add_request_to_db
 from loader import bot
 from settings import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
@@ -21,7 +21,7 @@ def city_input(message: Message) -> None:
     bot.set_state(message.from_user.id, SurveyStates.city_input)
     with bot.retrieve_data(message.from_user.id) as request_dict:
         request_dict['Команда'] = message.text
-        logger.info(f'Command {message.text}')
+        logger.debug(f'command: {message.text}')
 
 
 @bot.message_handler(state=SurveyStates.city_input)
@@ -32,7 +32,7 @@ def city_input_clarify(message: Message) -> None:
         наиболее подходящий вариант
         """
 
-    dict_of_cities = city_search(message.text)
+    dict_of_cities = city_search_v3(message.text)
     if dict_of_cities:
         markup = bi.inline_keyboard(states=dict_of_cities, row_width=2)
         bot.send_message(
@@ -45,8 +45,8 @@ def city_input_clarify(message: Message) -> None:
         bi.trash_message(bot, message)
         bot.send_message(
             chat_id=message.from_user.id,
-            text='По запросу ничего не найдено, '
-                 'введите корректное название населенного пункта'
+            text=f'По запросу "{message.text}" ничего не найдено, '
+                 'попробуйте еще раз'
         )
 
 
@@ -60,7 +60,7 @@ def city_input_details(call: CallbackQuery) -> None:
         """
 
     with bot.retrieve_data(call.from_user.id) as request_dict:
-        request_dict['destination_id'] = int(call.data)
+        request_dict['destination_id'] = call.data
         request_dict['Населенный пункт'] = bi.city_name_extract(
             call_dict=call.json,
             id_search=call.data)
@@ -234,7 +234,7 @@ def get_amount(message: Message) -> None:
         """
     if message.text.isdigit() and MIN_NUM <= int(message.text) <= MAX_HOTELS:
         with bot.retrieve_data(message.from_user.id) as request_dict:
-            request_dict['Кол-во предложений'] = message.text
+            request_dict['Кол-во предложений'] = int(message.text)
         dict_of_states = {
             'Да': 'yes',
             'Нет': 'no'
@@ -279,7 +279,7 @@ def get_photo(call: CallbackQuery) -> None:
                 user_id=call.from_user.id,
                 timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
                 request_dict=request_dict)
-            logger.info('Request from user recorded to DB')
+            logger.info(f'Request from {call.from_user.id} recorded to DB')
 
         display_results(user_id=call.from_user.id)
 
@@ -298,7 +298,7 @@ def get_photo_amount(message: Message) -> None:
                 user_id=message.from_user.id,
                 timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
                 request_dict=request_dict)
-            logger.info('Request from user recorded to DB')
+            logger.info(f'Request from {message.from_user.id} recorded to DB')
 
         bot.set_state(message.from_user.id, SurveyStates.echo)
         display_results(user_id=message.from_user.id)
