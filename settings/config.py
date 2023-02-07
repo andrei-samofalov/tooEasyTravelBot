@@ -10,14 +10,12 @@ else:
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 RAPID_API_KEY = os.getenv('RAPID_API_KEY')
 
-# город, ID районов города
-url_city = "https://hotels4.p.rapidapi.com/locations/v2/search"
-# ID города, гостиница, адрес, цена, удаленность от центра
-url_hotel = "https://hotels4.p.rapidapi.com/properties/list"
-# фото гостиницы по ID
-url_photos = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
+url_city_v3 = 'https://hotels4.p.rapidapi.com/locations/v3/search'
+url_hotel_v2 = "https://hotels4.p.rapidapi.com/properties/v2/list"
+url_hotel_details = "https://hotels4.p.rapidapi.com/properties/v2/detail"
 
 headers = {
+    "content-type": "application/json",
     "X-RapidAPI-Host": "hotels4.p.rapidapi.com",
     "X-RapidAPI-Key": RAPID_API_KEY
 }
@@ -25,17 +23,13 @@ headers = {
 DEFAULT_COMMANDS = (
     ('start', 'запустить бота'),
     ('help', 'вывести справку'),
-    ('lowprice', 'искать самые дешевые отели'),
-    ('highprice', 'искать самые дорогие отели'),
-    ('bestdeal', 'искать отели по заданным параметрам'),
+    ('search', 'поиск отелей'),     # developing
+    ('sorting', 'выбор сортировки выгрузки результатов'),
     ('history', 'показать историю поиска отелей'),
-    ('remove_garbage', 'очистить чат от мусора')
 )
 
 sort_order = {
-    '/lowprice': 'PRICE',
-    '/highprice': 'PRICE_HIGHEST_FIRST',
-    '/bestdeal': 'DISTANCE_FROM_LANDMARK'
+    '/search': 'PRICE_LOW_TO_HIGH',
 }
 
 MIN_NUM = 1
@@ -65,3 +59,14 @@ DATE_CONFIG = {
                       'даты заезда плюс один день'
     }
 }
+
+DATABASE = os.getenv('DATABASE')
+
+# ('➡ <b>Название</b>', f"<a href='https://www.hotels.com/ho{item['id']}'>{item['name']}</a>"),
+# ('⭐ <b>Звездность</b>', item.get('starRating', 'Нет данных')),
+# ('🏆 <b>Оценка посетителей</b>', f"{item.get('guestReviews', {}).get('rating', '- ')}"
+#        f"/{item.get('guestReviews', {}).get('scale', ' -')}"),
+# ('🗺️ <b>Адрес</b>', item.get('address', {}).get('streetAddress', 'Нет данных')),
+# ('📌 <b>Расстояние до центра</b>', item.get('landmarks', [])[0].get('distance', 'Нет данных')),
+# ('💵 <b>Цена за ночь</b>', item.get('ratePlan', {}).get('price', {}).get('current', 'Нет данных')),
+# ('💰 <b>Общая стоимость проживания</b>', f'{cost_of_journey:,d} RUB')

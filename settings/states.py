@@ -9,8 +9,5 @@ class SurveyStates(StatesGroup):
     amount_of_suggestion = State()
     get_photos = State()
     amount_of_photos = State()
-    distance = State()
-    max_price = State()
-    min_price = State()
     echo = State()
     history = State()

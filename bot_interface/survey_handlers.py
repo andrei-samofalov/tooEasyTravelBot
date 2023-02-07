@@ -1,19 +1,19 @@
+import time
+
 from telebot.types import CallbackQuery, Message
 from telegram_bot_calendar import DetailedTelegramCalendar
 
-from API.get_info import city_search, display_results, is_valid_date
-from bot_interface.custom_functions import (city_name_extract,
-                                            format_date, trash_message)
-from bot_interface.keyboards.inline_keyboard import inline_keyboard
+import bot_interface as bi
+from API import city_search_v3, display_results, is_valid_date
+from database import add_request_to_db
 from loader import bot
-from settings.config import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
-                             MIN_NUM)
-from settings.states import SurveyStates
+from settings import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
+                      MIN_NUM, SurveyStates, logger)
 
 
-@bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
+@bot.message_handler(commands=['search'])
 def city_input(message: Message) -> None:
-    """ Хэндлер, реагирует на команды 'lowprice', 'highprice', 'bestdeal'
+    """ Хэндлер, начало опроса,
         запрашивает у пользователя искомый населенный пункт """
 
     bot.reset_data(message.from_user.id)
@@ -21,6 +21,7 @@ def city_input(message: Message) -> None:
     bot.set_state(message.from_user.id, SurveyStates.city_input)
     with bot.retrieve_data(message.from_user.id) as request_dict:
         request_dict['Команда'] = message.text
+        logger.debug(f'command: {message.text}')
 
 
 @bot.message_handler(state=SurveyStates.city_input)
@@ -31,9 +32,9 @@ def city_input_clarify(message: Message) -> None:
         наиболее подходящий вариант
         """
 
-    dict_of_cities = city_search(message.text)
+    dict_of_cities = city_search_v3(message.text)
     if dict_of_cities:
-        markup = inline_keyboard(states=dict_of_cities, row_width=2)
+        markup = bi.inline_keyboard(states=dict_of_cities, row_width=2)
         bot.send_message(
             chat_id=message.from_user.id,
             text='Вот, что удалось найти.\nВыберите подходящий вариант '
@@ -41,11 +42,11 @@ def city_input_clarify(message: Message) -> None:
             reply_markup=markup
         )
     else:
-        trash_message(bot, message)
+        bi.trash_message(bot, message)
         bot.send_message(
             chat_id=message.from_user.id,
-            text='По запросу ничего не найдено, '
-                 'введите корректное название населенного пункта'
+            text=f'По запросу "{message.text}" ничего не найдено, '
+                 'попробуйте еще раз'
         )
 
 
@@ -59,26 +60,22 @@ def city_input_details(call: CallbackQuery) -> None:
         """
 
     with bot.retrieve_data(call.from_user.id) as request_dict:
-        request_dict['destination_id'] = int(call.data)
-        request_dict['Населенный пункт'] = city_name_extract(
-                                                    call_dict=call.json,
-                                                    id_search=call.data)
+        request_dict['destination_id'] = call.data
+        request_dict['Населенный пункт'] = bi.city_name_extract(
+            call_dict=call.json,
+            id_search=call.data)
+        logger.debug(f'City: {request_dict["Населенный пункт"]}')
         bot.edit_message_text(
             text=f"Выбранный населенный пункт: {request_dict['Населенный пункт']}",
             chat_id=call.from_user.id,
             message_id=call.message.message_id
         )
 
-        if request_dict['Команда'] == '/bestdeal':
-            bot.set_state(call.from_user.id, SurveyStates.min_price)
-            bot.send_message(call.from_user.id,
-                             'Введите минимальную стоимость за сутки (руб)')
-        else:
-            bot.set_state(call.from_user.id, SurveyStates.check_in)
-            calendar_bot, step = DetailedTelegramCalendar().build()
-            bot.send_message(chat_id=call.from_user.id,
-                             text="Выберите дату заезда",
-                             reply_markup=calendar_bot)
+        bot.set_state(call.from_user.id, SurveyStates.check_in)
+        calendar_bot, step = DetailedTelegramCalendar().build()
+        bot.send_message(chat_id=call.from_user.id,
+                         text="Выберите дату заезда",
+                         reply_markup=calendar_bot)
 
 
 @bot.callback_query_handler(state=SurveyStates.check_in,
@@ -102,7 +99,7 @@ def calendar_in(call: CallbackQuery) -> None:
     elif is_valid_date(result):
 
         bot.edit_message_text(
-            text=f"Выбранная дата заезда: {format_date(result)}",
+            text=f"Выбранная дата заезда: {bi.format_date(result)}",
             chat_id=call.message.chat.id,
             message_id=call.message.message_id
         )
@@ -147,7 +144,7 @@ def calendar_out(call: CallbackQuery) -> None:
     elif is_valid_date(result) and result > check_in:
 
         bot.edit_message_text(
-            text=f"Выбранная дата выезда: {format_date(result)}",
+            text=f"Выбранная дата выезда: {bi.format_date(result)}",
             chat_id=call.message.chat.id,
             message_id=call.message.message_id)
 
@@ -167,65 +164,6 @@ def calendar_out(call: CallbackQuery) -> None:
         )
 
 
-@bot.message_handler(state=SurveyStates.min_price)
-def min_price(message: Message) -> None:
-    """ Хэндлер, часть опроса bestdeal, реагирует на введенную
-        минимальную стоимость, запрашивает максимальную стоимость за сутки
-        """
-    if message.text.isdigit() and int(message.text) > 0:
-        bot.set_state(message.from_user.id, SurveyStates.max_price)
-        with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['Минимальная цена'] = message.text
-        bot.send_message(chat_id=message.from_user.id,
-                         text='Введите максимальную стоимость за сутки (руб)')
-    else:
-        trash_message(bot, message)
-        bot.send_message(chat_id=message.from_user.id,
-                         text=INT_ERROR)
-
-
-@bot.message_handler(state=SurveyStates.max_price)
-def max_price(message: Message) -> None:
-    """ Хэндлер, часть опроса bestdeal, реагирует на введенную
-        максимальную стоимость, запрашивает максимальное удаление от центра
-        """
-    with bot.retrieve_data(message.from_user.id) as request_data:
-        minimal_price = int(request_data['Минимальная цена'])
-
-    if message.text.isdigit() and int(message.text) >= minimal_price:
-        bot.set_state(message.from_user.id, SurveyStates.distance)
-        with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['Максимальная цена'] = message.text
-        bot.send_message(chat_id=message.from_user.id,
-                         text='Введите максимальное удаление от центра (км)')
-    else:
-        trash_message(bot, message)
-        bot.send_message(chat_id=message.from_user.id,
-                         text=f'{INT_ERROR} не меньше указанной Вами '
-                              f'минимальной цены.')
-
-
-@bot.message_handler(state=SurveyStates.distance)
-def get_distance(message: Message) -> None:
-    """ Хэндлер, часть опроса bestdeal, реагирует на введенное
-        максимальное удаление от центра, запрашивает дату заезда,
-        опрос bestdeal вливается в общий опрос lowprice и highprice
-        """
-    if message.text.isdigit() and int(message.text) > 0:
-        bot.set_state(message.from_user.id, SurveyStates.check_in)
-        with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['Расстояние до центра'] = message.text
-
-        calendar_bot, step = DetailedTelegramCalendar().build()
-        bot.send_message(chat_id=message.from_user.id,
-                         text="Выберите дату заезда",
-                         reply_markup=calendar_bot)
-    else:
-        trash_message(bot, message)
-        bot.send_message(chat_id=message.from_user.id,
-                         text=INT_ERROR)
-
-
 @bot.message_handler(state=SurveyStates.amount_of_suggestion)
 def get_amount(message: Message) -> None:
     """ Хэндлер, реагирует на введенное количество выводимых предложений,
@@ -233,18 +171,18 @@ def get_amount(message: Message) -> None:
         """
     if message.text.isdigit() and MIN_NUM <= int(message.text) <= MAX_HOTELS:
         with bot.retrieve_data(message.from_user.id) as request_dict:
-            request_dict['Кол-во предложений'] = message.text
+            request_dict['Кол-во предложений'] = int(message.text)
         dict_of_states = {
             'Да': 'yes',
             'Нет': 'no'
         }
-        markup = inline_keyboard(states=dict_of_states, row_width=1)
+        markup = bi.inline_keyboard(states=dict_of_states, row_width=1)
         bot.send_message(chat_id=message.from_user.id,
                          text='Загружать фотографии отелей?',
                          reply_markup=markup)
         bot.set_state(message.from_user.id, SurveyStates.get_photos)
     else:
-        trash_message(bot, message)
+        bi.trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=f'{INT_ERROR} до {MAX_HOTELS} включительно')
 
@@ -273,6 +211,13 @@ def get_photo(call: CallbackQuery) -> None:
             message_id=call.message.message_id
         )
         bot.set_state(call.from_user.id, SurveyStates.echo)
+        with bot.retrieve_data(call.from_user.id) as request_dict:
+            add_request_to_db(
+                user_id=call.from_user.id,
+                timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
+                request_dict=request_dict)
+            logger.info(f'Request from {call.from_user.id} recorded to DB')
+
         display_results(user_id=call.from_user.id)
 
 
@@ -286,10 +231,16 @@ def get_photo_amount(message: Message) -> None:
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['Кол-во фотографий'] = int(message.text)
 
+            add_request_to_db(
+                user_id=message.from_user.id,
+                timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
+                request_dict=request_dict)
+            logger.info(f'Request from {message.from_user.id} recorded to DB')
+
         bot.set_state(message.from_user.id, SurveyStates.echo)
         display_results(user_id=message.from_user.id)
 
     else:
-        trash_message(bot, message)
+        bi.trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
                          text=f'{INT_ERROR} до {MAX_PHOTOS} включительно')

@@ -1,0 +1,7 @@
+Dockerfile
+.env.template
+.gitignore
+venv
+*.json
+*.db
+.dockerignore

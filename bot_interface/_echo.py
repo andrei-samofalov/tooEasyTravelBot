@@ -1,8 +1,8 @@
 from telebot.types import Message
 
-from bot_interface.custom_functions import trash_message
+from bot_interface import trash_message
 from loader import bot
-from settings.states import SurveyStates
+from settings import SurveyStates
 
 
 @bot.message_handler(state=[SurveyStates.echo, SurveyStates.check_in,
