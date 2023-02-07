@@ -64,6 +64,7 @@ def city_input_details(call: CallbackQuery) -> None:
         request_dict['Населенный пункт'] = bi.city_name_extract(
             call_dict=call.json,
             id_search=call.data)
+        logger.debug(f'City: {request_dict["Населенный пункт"]}')
         bot.edit_message_text(
             text=f"Выбранный населенный пункт: {request_dict['Населенный пункт']}",
             chat_id=call.from_user.id,
