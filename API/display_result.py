@@ -1,7 +1,7 @@
 import time
 
 from loader import bot
-from settings import logger, ECHO_MESSAGE
+from settings import ECHO_MESSAGE, logger
 from .hotel_search_request import hotel_search_v2
 from .models import Hotel
 
@@ -20,6 +20,8 @@ def display_results(user_id: int) -> None:
     bot.send_message(chat_id=user_id,
                      text='Ваш запрос обрабатывается...')
 
+    logger.debug('Pulling hotels info from API')
+    start = time.time()
     with bot.retrieve_data(user_id) as request_dict:
         results: list[Hotel] = hotel_search_v2(
             city_id=request_dict.get('destination_id'),
@@ -30,7 +32,6 @@ def display_results(user_id: int) -> None:
             max_price=request_dict.get('Максимальная цена'),
             min_price=request_dict.get('Минимальная цена'),
         )
-        logger.debug(f'Response in Hotel-model: {results}')
 
         if results:
             for hotel in results:
@@ -40,9 +41,11 @@ def display_results(user_id: int) -> None:
 
                 if photos:
                     hotel_hotel_and_photos = hotel.display_with_photos(photos)
+                    logger.debug(f'Starting sending messages after {time.time() - start:.3} sec')
                     bot.send_media_group(chat_id=user_id, media=hotel_hotel_and_photos)
                     continue
 
+                logger.debug(f'{hotel.name}: starting sending messages after {time.time() - start:.3} sec')
                 bot.send_message(
                     chat_id=user_id,
                     text=display_hotel,
@@ -50,6 +53,7 @@ def display_results(user_id: int) -> None:
                 time.sleep(0.5)
 
             else:
+                logger.info(f'All results have been displayed after {time.time() - start:.3} sec')
                 bot.send_message(
                     chat_id=user_id,
                     text='Все результаты выгружены.\n' + ECHO_MESSAGE
