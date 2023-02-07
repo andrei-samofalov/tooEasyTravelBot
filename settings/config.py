@@ -29,9 +29,7 @@ DEFAULT_COMMANDS = (
 )
 
 sort_order = {
-    '/lowprice': 'PRICE_LOW_TO_HIGH',
-    '/highprice': 'PRICE_HIGH_TO_LOW',
-    '/bestdeal': 'DISTANCE'
+    '/search': 'PRICE_LOW_TO_HIGH',
 }
 
 MIN_NUM = 1
