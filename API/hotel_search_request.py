@@ -1,7 +1,9 @@
 import time
 from datetime import date
 from http import HTTPStatus
-from multiprocessing import Semaphore, cpu_count
+from multiprocessing import cpu_count, BoundedSemaphore as pr_Sem
+from threading import BoundedSemaphore as th_Sem
+
 import requests
 
 from settings import (headers, logger, sort_order, url_hotel_v2)
@@ -48,20 +50,26 @@ def hotel_search_v2(city_id: str, check_in: date, check_out: date,
     response = requests.request("POST", url_hotel_v2, json=payload, headers=headers)
 
     if response.status_code == HTTPStatus.OK:
+        result = []
         try:
             hotels = response.json()['data']['propertySearch']['properties']
-            result = []
 
-            with Semaphore(cpu_count()):
-                for h in hotels:
-                    result.append(Hotel(h))
+            sem1 = th_Sem(5)        # API limit
+            sem2 = pr_Sem(cpu_count())
+            for h in hotels:
+                result.append(Hotel(h, sem1, sem2))
 
-                for i in result:
-                    i.join()
+            for i in result:
+                i.start()
+                time.sleep(0.05)
+            for i in result:
+                i.join()
 
-            logger.info(f'Something goes right')
-            return result
-        except KeyError:
-            return []
+            logger.info(f'All hotels are done with generate data')
+
+        except KeyError as ex:
+            logger.error(f"Response doesn't match json structure; {ex.args}")
+
+        return result
     else:
-        logger.error(f'Error {response.status_code}')
+        logger.error(f'Error {response.status_code}: {response.text}')
