@@ -10,14 +10,8 @@ else:
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 RAPID_API_KEY = os.getenv('RAPID_API_KEY')
 
-# город, ID районов города
-url_city_v2 = "https://hotels4.p.rapidapi.com/locations/v2/search"
 url_city_v3 = 'https://hotels4.p.rapidapi.com/locations/v3/search'
-
-# ID города, гостиница, адрес, цена, удаленность от центра
-url_hotel = "https://hotels4.p.rapidapi.com/properties/list"
 url_hotel_v2 = "https://hotels4.p.rapidapi.com/properties/v2/list"
-# фото гостиницы по ID
 url_hotel_details = "https://hotels4.p.rapidapi.com/properties/v2/detail"
 
 headers = {
@@ -29,11 +23,9 @@ headers = {
 DEFAULT_COMMANDS = (
     ('start', 'запустить бота'),
     ('help', 'вывести справку'),
-    ('lowprice', 'искать самые дешевые отели'),
-    ('highprice', 'искать самые дорогие отели'),
-    ('bestdeal', 'искать отели по заданным параметрам'),
+    ('search', 'поиск отелей'),     # developing
+    ('sorting', 'выбор сортировки выгрузки результатов'),
     ('history', 'показать историю поиска отелей'),
-    ('remove_garbage', 'очистить чат от мусора')
 )
 
 sort_order = {
