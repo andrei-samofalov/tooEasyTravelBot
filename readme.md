@@ -30,11 +30,8 @@ RapidAPI получить на сайте [RapidAPI](https://rapidapi.com/hub)).
 
 ### Установка на удаленном сервере Linux:
 1. Установите [Docker](https://docs.docker.com/engine/install/ubuntu/) на удаленном сервере
-2. Введите в терминале команду `$ docker run andreisamofalov/tg_bot`
-
-#### Создание собственного образа Docker:
-1. Вы должны быть зарегистрированы на сайте [Dockerhub](https://hub.docker.com/), также необходимо пройти аутентификацию (`$ docker login`)
-2. Находясь в папке с приложением, введите команды 
+2. Вы должны быть зарегистрированы на сайте [Dockerhub](https://hub.docker.com/), также необходимо пройти аутентификацию (`$ docker login`)
+3. Находясь в папке с приложением, введите команды 
 
     `$ docker build -t <image_name> .` где <image_name> - название образа, а "." (точка) - папка, где необходимо искать докерфайл (Dockerfile)
     
@@ -42,6 +39,6 @@ RapidAPI получить на сайте [RapidAPI](https://rapidapi.com/hub)).
     
     `$ docker push <your_login/image_rep>`
 
-3. Теперь Вы можете запустить приложение, используя свой собственный образ docker:
+4. Теперь Вы можете запустить приложение, используя свой собственный образ docker:
    
    `$ docker run <your_login/image_rep>`
