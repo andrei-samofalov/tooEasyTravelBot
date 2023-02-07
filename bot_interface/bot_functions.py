@@ -6,7 +6,7 @@ from telebot.apihelper import ApiTelegramException
 from telebot.types import CallbackQuery, Message, BotCommand
 
 from database import add_trash_message_to_db
-from settings import DEFAULT_COMMANDS
+from settings import DEFAULT_COMMANDS, logger
 
 
 def base_commands(my_bot):
@@ -42,7 +42,7 @@ def trash_message(bot: TeleBot, message: Message | CallbackQuery) -> None:
     bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id)
 
 
-def delete_trash_messages(bot: TeleBot, user_id: str | int) -> None:
+def delete_trash_messages(bot: TeleBot, user_id: int) -> None:
     """ Функция удаляет все сообщения, полученные в режиме echo """
     try:
         with bot.retrieve_data(user_id) as request_data:
@@ -51,5 +51,20 @@ def delete_trash_messages(bot: TeleBot, user_id: str | int) -> None:
                     bot.delete_message(user_id, message_id)
                 else:
                     request_data['msg_to_delete'] = []
-    except (KeyError, ApiTelegramException):
-        print('Хранилище памяти еще не инициализировано')
+            else:
+                pass
+    except (KeyError, ApiTelegramException) as ex:
+        logger.error(f'Хранилище памяти еще не инициализировано, {ex.args}')
+
+
+def history_display(row: tuple) -> str:
+    columns = (
+        'Date, time',
+        'Command',
+        'City',
+        'Check in',
+        'Check out',
+    )
+    display = dict(zip(columns, row))
+    display = [f'<b>{k}</b>: {v}' for k, v in display.items()]
+    return "\n".join(display)

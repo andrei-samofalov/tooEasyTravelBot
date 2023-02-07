@@ -63,3 +63,15 @@ VALUES (?, ?, ?);
 GET_USERS = """
 SELECT * FROM users;
 """
+
+GET_USER_REQUEST = """
+SELECT 
+    query_time,
+    command,  
+    destination_name, 
+    check_in, check_out
+FROM sessions
+WHERE user_id = ?
+ORDER BY id DESC 
+LIMIT ?;
+"""

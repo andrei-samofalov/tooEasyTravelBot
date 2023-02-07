@@ -11,9 +11,9 @@ from settings import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
                       MIN_NUM, SurveyStates, logger)
 
 
-@bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
+@bot.message_handler(commands=['search'])
 def city_input(message: Message) -> None:
-    """ Хэндлер, реагирует на команды 'lowprice', 'highprice', 'bestdeal'
+    """ Хэндлер, начало опроса,
         запрашивает у пользователя искомый населенный пункт """
 
     bot.reset_data(message.from_user.id)
@@ -71,16 +71,11 @@ def city_input_details(call: CallbackQuery) -> None:
             message_id=call.message.message_id
         )
 
-        if request_dict['Команда'] == '/bestdeal':
-            bot.set_state(call.from_user.id, SurveyStates.min_price)
-            bot.send_message(call.from_user.id,
-                             'Введите минимальную стоимость за сутки (руб)')
-        else:
-            bot.set_state(call.from_user.id, SurveyStates.check_in)
-            calendar_bot, step = DetailedTelegramCalendar().build()
-            bot.send_message(chat_id=call.from_user.id,
-                             text="Выберите дату заезда",
-                             reply_markup=calendar_bot)
+        bot.set_state(call.from_user.id, SurveyStates.check_in)
+        calendar_bot, step = DetailedTelegramCalendar().build()
+        bot.send_message(chat_id=call.from_user.id,
+                         text="Выберите дату заезда",
+                         reply_markup=calendar_bot)
 
 
 @bot.callback_query_handler(state=SurveyStates.check_in,
@@ -167,65 +162,6 @@ def calendar_out(call: CallbackQuery) -> None:
             text=DATE_CONFIG.get(current_state).get('error_text'),
             show_alert=True
         )
-
-
-@bot.message_handler(state=SurveyStates.min_price)
-def min_price(message: Message) -> None:
-    """ Хэндлер, часть опроса bestdeal, реагирует на введенную
-        минимальную стоимость, запрашивает максимальную стоимость за сутки
-        """
-    if message.text.isdigit() and int(message.text) > 0:
-        bot.set_state(message.from_user.id, SurveyStates.max_price)
-        with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['Минимальная цена'] = message.text
-        bot.send_message(chat_id=message.from_user.id,
-                         text='Введите максимальную стоимость за сутки (руб)')
-    else:
-        bi.trash_message(bot, message)
-        bot.send_message(chat_id=message.from_user.id,
-                         text=INT_ERROR)
-
-
-@bot.message_handler(state=SurveyStates.max_price)
-def max_price(message: Message) -> None:
-    """ Хэндлер, часть опроса bestdeal, реагирует на введенную
-        максимальную стоимость, запрашивает максимальное удаление от центра
-        """
-    with bot.retrieve_data(message.from_user.id) as request_data:
-        minimal_price = int(request_data['Минимальная цена'])
-
-    if message.text.isdigit() and int(message.text) >= minimal_price:
-        bot.set_state(message.from_user.id, SurveyStates.distance)
-        with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['Максимальная цена'] = message.text
-        bot.send_message(chat_id=message.from_user.id,
-                         text='Введите максимальное удаление от центра (км)')
-    else:
-        bi.trash_message(bot, message)
-        bot.send_message(chat_id=message.from_user.id,
-                         text=f'{INT_ERROR} не меньше указанной Вами '
-                              f'минимальной цены.')
-
-
-@bot.message_handler(state=SurveyStates.distance)
-def get_distance(message: Message) -> None:
-    """ Хэндлер, часть опроса bestdeal, реагирует на введенное
-        максимальное удаление от центра, запрашивает дату заезда,
-        опрос bestdeal вливается в общий опрос lowprice и highprice
-        """
-    if message.text.isdigit() and int(message.text) > 0:
-        bot.set_state(message.from_user.id, SurveyStates.check_in)
-        with bot.retrieve_data(message.from_user.id) as request_data:
-            request_data['Расстояние до центра'] = message.text
-
-        calendar_bot, step = DetailedTelegramCalendar().build()
-        bot.send_message(chat_id=message.from_user.id,
-                         text="Выберите дату заезда",
-                         reply_markup=calendar_bot)
-    else:
-        bi.trash_message(bot, message)
-        bot.send_message(chat_id=message.from_user.id,
-                         text=INT_ERROR)
 
 
 @bot.message_handler(state=SurveyStates.amount_of_suggestion)

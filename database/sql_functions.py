@@ -48,6 +48,15 @@ def add_request_to_db(c: sqlite3.Cursor, user_id: int,
 
 
 @db_touch
+def get_request_from_db(c: sqlite3.Cursor, user: User, amount: int) -> list:
+    c.execute(
+        sql.GET_USER_REQUEST,
+        (user.id, amount)
+    )
+    return c.fetchall()
+
+
+@db_touch
 def add_user_to_db(c: sqlite3.Cursor, user: User) -> None:
     c.execute(
         sql.ADD_USER,
