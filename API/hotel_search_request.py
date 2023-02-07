@@ -50,26 +50,20 @@ def hotel_search_v2(city_id: str, check_in: date, check_out: date,
     response = requests.request("POST", url_hotel_v2, json=payload, headers=headers)
 
     if response.status_code == HTTPStatus.OK:
-        result = []
+
         try:
             hotels = response.json()['data']['propertySearch']['properties']
 
             sem1 = th_Sem(5)        # API limit
             sem2 = pr_Sem(cpu_count())
             for h in hotels:
-                result.append(Hotel(h, sem1, sem2))
-
-            for i in result:
-                i.start()
-                time.sleep(0.05)
-            for i in result:
-                i.join()
+                hotel = Hotel(h, sem1, sem2)
+                yield hotel
 
             logger.info(f'All hotels are done with generate data')
 
         except KeyError as ex:
             logger.error(f"Response doesn't match json structure; {ex.args}")
 
-        return result
     else:
         logger.error(f'Error {response.status_code}: {response.text}')

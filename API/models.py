@@ -46,11 +46,11 @@ class Hotel(Thread):
         self._data = hotel_data
         self._sem1 = sem1
         self._sem2 = sem2
+        self.start()
 
     def run(self) -> None:
         with self._sem1:
             self._more_data = self._get_additional_hotel_data()
-
         with self._sem2:
             self._struct_data = self._resolve_data()
             logger.debug(f'{self.name}: data resolved')
@@ -60,6 +60,7 @@ class Hotel(Thread):
                 self._resolve_images()
             except JsonPointerException as ex:
                 logger.error(f'{self.name}: unable to resolve; {ex.args}')
+                self.join()
 
     def display_data(self) -> str:
         return "\n".join(
