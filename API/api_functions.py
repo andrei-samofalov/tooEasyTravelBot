@@ -5,23 +5,19 @@ from telebot.types import InputMediaPhoto
 from settings import logger
 
 
-def photos_output(photos: list, caption: str, amount=0) -> list[InputMediaPhoto]:
+def photos_output(photos: list, caption: str) -> list[InputMediaPhoto]:
     """ Функция для преобразования выгруженных фотографий
         в формат pyTelegramAPI в количестве, указанном пользователем """
-    photos_list = [
-        InputMediaPhoto(photo, caption=caption, parse_mode='html')
-        for photo in photos
-    ]
+    photos_list = []
+    for ind, photo in enumerate(photos):
+        if ind == 0:
+            photos_list.append(
+                InputMediaPhoto(photo, caption=caption, parse_mode='html')
+            )
+        photos_list.append(InputMediaPhoto(photo))
 
-    logger.info(f'{photos_list=}')
-    photos_wo_caption = [
-        InputMediaPhoto(photo)
-        if amount > 1 else [] for photo in photos
-    ]
-    logger.info(f'{photos_wo_caption=}')
-    first_photo = photos_list[:1]
-    other_photos = photos_wo_caption[1:amount]
-    return first_photo + other_photos
+    logger.debug('Photos have been formatted')
+    return photos_list
 
 
 def total_cost(check_in: datetime, check_out: datetime, cost: float) -> int:
