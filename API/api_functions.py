@@ -4,6 +4,8 @@ from telebot.types import InputMediaPhoto
 
 from settings import logger
 
+__all__ = ["photos_output", "is_valid_date"]
+
 
 def photos_output(photos: list, caption: str) -> list[InputMediaPhoto]:
     """ Функция для преобразования выгруженных фотографий
@@ -18,12 +20,6 @@ def photos_output(photos: list, caption: str) -> list[InputMediaPhoto]:
 
     logger.debug('Photos have been formatted')
     return photos_list
-
-
-def total_cost(check_in: datetime, check_out: datetime, cost: float) -> int:
-    """ Функция для подсчета общей стоимости проживания """
-    days = check_out - check_in
-    return round(cost * days.days)
 
 
 def is_valid_date(d: date) -> bool:

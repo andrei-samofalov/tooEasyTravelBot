@@ -34,7 +34,7 @@ setup = {
         "travelBotLogger": {
             "level": "DEBUG",
             "handlers": ["screen", "file"],
-         }
+        }
     },
 }
 

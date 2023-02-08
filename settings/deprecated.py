@@ -1,5 +1,6 @@
-from settings import logger
 from functools import wraps
+
+from settings import logger
 
 
 def deprecated(func: callable) -> callable:
@@ -7,4 +8,5 @@ def deprecated(func: callable) -> callable:
     def function(*args, **kwargs):
         logger.warning(f'This function "({func.__name__})" is deprecated. Please, use actual version')
         return func(*args, **kwargs)
+
     return function

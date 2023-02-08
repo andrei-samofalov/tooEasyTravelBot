@@ -1,10 +1,11 @@
 FROM python:3.10-slim
 
-COPY . ./hotelbot
-
 WORKDIR /hotelbot
+
+COPY requirements.txt .
 
 RUN python -m pip install -r requirements.txt
 
+COPY . .
 
 ENTRYPOINT ["python", "main.py"]

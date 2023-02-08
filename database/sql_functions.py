@@ -32,17 +32,14 @@ def add_request_to_db(c: sqlite3.Cursor, user_id: int,
         sql.ADD_USER_REQUEST,
         (
             user_id,
-            request_dict.get('Команда'),
+            request_dict.get('command'),
             timestamp,
-            request_dict.get('destination_id'),
-            request_dict.get('Населенный пункт'),
-            request_dict.get('Дата заезда'),
-            request_dict.get('Дата выезда'),
-            request_dict.get('Минимальная цена'),
-            request_dict.get('Максимальная цена'),
-            request_dict.get('Расстояние до центра'),
-            request_dict.get('Кол-во предложений'),
-            request_dict.get('Кол-во фотографий')
+            request_dict.get('region_id'),
+            request_dict.get('city'),
+            request_dict.get('check_in'),
+            request_dict.get('check_out'),
+            request_dict.get('hotels_amount'),
+            request_dict.get('photos_amount')
         )
     )
 

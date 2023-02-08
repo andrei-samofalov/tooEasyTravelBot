@@ -1,7 +1,6 @@
 import requests
 
-from settings import logger
-from settings import url_hotel_details, headers
+from settings import headers, logger, url_hotel_details
 
 
 def get_hotel_details(hotel_id: int) -> dict:

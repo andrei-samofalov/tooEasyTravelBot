@@ -12,13 +12,10 @@ CREATE_TABLES = """
     user_id INTEGER REFERENCES users(id),
     command TEXT,
     query_time TEXT,
-    destination_id INTEGER,
+    destination_id TEXT,
     destination_name TEXT,
     check_in TEXT,
     check_out TEXT,
-    min_price INTEGER,
-    max_price INTEGER,
-    distance INTEGER,
     offer_amount INTEGER,
     photo_amount INTEGER
     );
@@ -30,7 +27,6 @@ CREATE_TABLES = """
     );
     COMMIT;
 """
-
 
 ADD_USER = """
     insert or ignore into users (id, first_name, last_name, 
@@ -49,10 +45,9 @@ SELECT
 ADD_USER_REQUEST = """
     insert into `sessions` (user_id, command, query_time, 
                             destination_id, destination_name, 
-                            check_in, check_out, min_price,
-                            max_price, distance ,offer_amount, 
+                            check_in, check_out, offer_amount, 
                             photo_amount)
-    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    values (?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 ADD_TRASH_MESSAGE = """
@@ -67,9 +62,9 @@ SELECT * FROM users;
 GET_USER_REQUEST = """
 SELECT 
     query_time,
-    command,  
     destination_name, 
-    check_in, check_out
+    check_in, check_out, 
+    offer_amount, photo_amount
 FROM sessions
 WHERE user_id = ?
 ORDER BY id DESC 

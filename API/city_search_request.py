@@ -2,7 +2,9 @@ from http import HTTPStatus
 
 import requests
 
-from settings import (headers, logger, url_city_v3)
+from settings import headers, logger, url_city_v3
+
+__all__ = ['city_search_v3']
 
 
 def city_search_v3(city: str) -> dict:

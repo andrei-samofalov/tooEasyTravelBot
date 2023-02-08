@@ -7,6 +7,8 @@ from database import get_request_from_db
 from loader import bot
 from settings import ECHO_MESSAGE, INT_ERROR, SurveyStates
 
+__all__ = ['history', 'get_history']
+
 
 @bot.message_handler(commands=['history'])
 def history(message: Message) -> None:

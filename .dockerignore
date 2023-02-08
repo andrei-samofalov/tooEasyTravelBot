@@ -2,6 +2,6 @@ Dockerfile
 .env.template
 .gitignore
 venv
-*.json
+API/jsons
 *.db
 .dockerignore

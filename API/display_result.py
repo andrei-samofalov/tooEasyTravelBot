@@ -1,37 +1,30 @@
 import time
 
+from API.hotel_search_request import hotel_search_v2
+from API.models import Hotel
 from loader import bot
 from settings import ECHO_MESSAGE, logger
-from .hotel_search_request import hotel_search_v2
-from .models import Hotel
+
+__all__ = ['display_results']
 
 
-def display_results(user_id: int) -> None:
+def display_results(user_id: int, request: dict = None) -> None:
     """
     Функция получает от API список отелей,
     для каждого отеля формирует данные, выводимые в чат бота
 
-    :param user_id: ID пользователя, полученного из message.from_user.id
-    или call.from_user.id
+    :param user_id: ID пользователя
+    :param request: словарь с данными запроса
     :return: None
-    Результат отправляется в бота, импортируемого из модуля loader
     """
 
     bot.send_message(chat_id=user_id,
                      text='Ваш запрос обрабатывается...')
 
-    logger.debug('Pulling hotels info from API')
     start = time.time()
-    with bot.retrieve_data(user_id) as request_dict:
-        results: list[Hotel] = hotel_search_v2(
-            city_id=request_dict.get('destination_id'),
-            check_in=request_dict.get('Дата заезда'),
-            check_out=request_dict.get('Дата выезда'),
-            amount_of_suggestion=request_dict.get('Кол-во предложений'),
-            command=request_dict.get('Команда'),
-            max_price=request_dict.get('Максимальная цена'),
-            min_price=request_dict.get('Минимальная цена'),
-        )
+    logger.debug('Pulling hotels info from API')
+    results: [Hotel] = hotel_search_v2(**request)
+    photos = request.get('photos_amount')
 
     if not results:
         bot.send_message(
@@ -42,7 +35,6 @@ def display_results(user_id: int) -> None:
 
     for hotel in results:
         hotel.join()
-        photos = request_dict.get('Кол-во фотографий')
 
         if photos:
             hotel_hotel_and_photos = hotel.display_with_photos(photos)

@@ -7,8 +7,8 @@ import bot_interface as bi
 from API import city_search_v3, display_results, is_valid_date
 from database import add_request_to_db
 from loader import bot
-from settings import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS,
-                      MIN_NUM, SurveyStates, logger)
+from settings import (DATE_CONFIG, INT_ERROR, MAX_HOTELS, MAX_PHOTOS, MIN_NUM,
+                      SurveyStates, logger)
 
 
 @bot.message_handler(commands=['search'])
@@ -20,7 +20,7 @@ def city_input(message: Message) -> None:
     bot.send_message(message.from_user.id, 'Введите название города')
     bot.set_state(message.from_user.id, SurveyStates.city_input)
     with bot.retrieve_data(message.from_user.id) as request_dict:
-        request_dict['Команда'] = message.text
+        request_dict['command'] = message.text
         logger.debug(f'command: {message.text}')
 
 
@@ -60,13 +60,13 @@ def city_input_details(call: CallbackQuery) -> None:
         """
 
     with bot.retrieve_data(call.from_user.id) as request_dict:
-        request_dict['destination_id'] = call.data
-        request_dict['Населенный пункт'] = bi.city_name_extract(
+        request_dict['region_id'] = call.data
+        request_dict['city'] = bi.city_name_extract(
             call_dict=call.json,
             id_search=call.data)
-        logger.debug(f'City: {request_dict["Населенный пункт"]}')
+        logger.debug(f'City: {request_dict["city"]}')
         bot.edit_message_text(
-            text=f"Выбранный населенный пункт: {request_dict['Населенный пункт']}",
+            text=f"Выбранный населенный пункт: {request_dict['city']}",
             chat_id=call.from_user.id,
             message_id=call.message.message_id
         )
@@ -105,7 +105,7 @@ def calendar_in(call: CallbackQuery) -> None:
         )
         bot.set_state(call.from_user.id, SurveyStates.check_out)
         with bot.retrieve_data(call.from_user.id) as request_dict:
-            request_dict['Дата заезда'] = result
+            request_dict['check_in'] = result
 
         calendar_bot, step = DetailedTelegramCalendar().build()
         bot.send_message(chat_id=call.from_user.id,
@@ -128,7 +128,7 @@ def calendar_out(call: CallbackQuery) -> None:
         """
 
     with bot.retrieve_data(call.from_user.id) as request_dict:
-        check_in = request_dict['Дата заезда']
+        check_in = request_dict['check_in']
 
     result, key, step = DetailedTelegramCalendar().process(call.data)
     current_state = bot.get_state(call.from_user.id)
@@ -150,7 +150,7 @@ def calendar_out(call: CallbackQuery) -> None:
 
         bot.set_state(call.from_user.id, SurveyStates.amount_of_suggestion)
         with bot.retrieve_data(call.from_user.id) as request_dict:
-            request_dict['Дата выезда'] = result
+            request_dict['check_out'] = result
 
         bot.send_message(chat_id=call.from_user.id,
                          text=f'Сколько выводить предложений?'
@@ -171,7 +171,7 @@ def get_amount(message: Message) -> None:
         """
     if message.text.isdigit() and MIN_NUM <= int(message.text) <= MAX_HOTELS:
         with bot.retrieve_data(message.from_user.id) as request_dict:
-            request_dict['Кол-во предложений'] = int(message.text)
+            request_dict['hotels_amount'] = int(message.text)
         dict_of_states = {
             'Да': 'yes',
             'Нет': 'no'
@@ -211,14 +211,16 @@ def get_photo(call: CallbackQuery) -> None:
             message_id=call.message.message_id
         )
         bot.set_state(call.from_user.id, SurveyStates.echo)
+
         with bot.retrieve_data(call.from_user.id) as request_dict:
+            request_dict['photos_amount'] = 0
             add_request_to_db(
                 user_id=call.from_user.id,
                 timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
                 request_dict=request_dict)
             logger.info(f'Request from {call.from_user.id} recorded to DB')
 
-        display_results(user_id=call.from_user.id)
+            display_results(user_id=call.from_user.id, request=request_dict)
 
 
 @bot.message_handler(state=SurveyStates.amount_of_photos)
@@ -229,7 +231,7 @@ def get_photo_amount(message: Message) -> None:
     if message.text.isdigit() and MIN_NUM <= int(message.text) <= MAX_PHOTOS:
 
         with bot.retrieve_data(message.from_user.id) as request_dict:
-            request_dict['Кол-во фотографий'] = int(message.text)
+            request_dict['photos_amount'] = int(message.text)
 
             add_request_to_db(
                 user_id=message.from_user.id,
@@ -237,10 +239,11 @@ def get_photo_amount(message: Message) -> None:
                 request_dict=request_dict)
             logger.info(f'Request from {message.from_user.id} recorded to DB')
 
-        bot.set_state(message.from_user.id, SurveyStates.echo)
-        display_results(user_id=message.from_user.id)
+            bot.set_state(message.from_user.id, SurveyStates.echo)
+            display_results(user_id=message.from_user.id,
+                            request=request_dict)
 
     else:
         bi.trash_message(bot, message)
         bot.send_message(chat_id=message.from_user.id,
-                         text=f'{INT_ERROR} до {MAX_PHOTOS} включительно')
+                         text=f'{INT_ERROR} до {MAX_PHOTOS} включительно..')

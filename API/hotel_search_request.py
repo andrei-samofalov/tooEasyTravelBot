@@ -1,18 +1,19 @@
-import time
 from datetime import date
 from http import HTTPStatus
-from multiprocessing import cpu_count, BoundedSemaphore as pr_Sem
+from multiprocessing import Semaphore as pr_Sem
+from multiprocessing import cpu_count
 from threading import BoundedSemaphore as th_Sem
 
 import requests
 
-from settings import (headers, logger, sort_order, url_hotel_v2)
-from .models import Hotel
+from settings import headers, logger, sort_order, url_hotel_v2
+from API.models import Hotel
+
+__all__ = ['hotel_search_v2']
 
 
-def hotel_search_v2(city_id: str, check_in: date, check_out: date,
-                    amount_of_suggestion: int, command: str,
-                    max_price: int = 1000000, min_price: int = 1) -> list[Hotel]:
+def hotel_search_v2(region_id: str, check_in: date, check_out: date,
+                    hotels_amount: int, command: str, **kwargs) -> [Hotel]:
     """
     Запрос к API сайта для получения списка отелей
     """
@@ -22,7 +23,7 @@ def hotel_search_v2(city_id: str, check_in: date, check_out: date,
         "eapid": 1,
         "locale": "ru_RU",
         "siteId": 300000001,
-        "destination": {"regionId": city_id},
+        "destination": {"regionId": region_id},
         "checkInDate": {
             "day": check_in.day,
             "month": check_in.month,
@@ -40,11 +41,11 @@ def hotel_search_v2(city_id: str, check_in: date, check_out: date,
             }
         ],
         "resultsStartingIndex": 0,
-        "resultsSize": amount_of_suggestion,
+        "resultsSize": hotels_amount,
         "sort": sort_order[command],
         "filters": {"price": {
-            "max": max_price,
-            "min": min_price
+            "max": 100000,
+            "min": 1
         }}
     }
     response = requests.request("POST", url_hotel_v2, json=payload, headers=headers)
@@ -54,7 +55,7 @@ def hotel_search_v2(city_id: str, check_in: date, check_out: date,
         try:
             hotels = response.json()['data']['propertySearch']['properties']
 
-            sem1 = th_Sem(5)        # API limit
+            sem1 = th_Sem(5)  # API limit
             sem2 = pr_Sem(cpu_count())
             for h in hotels:
                 hotel = Hotel(h, sem1, sem2)
