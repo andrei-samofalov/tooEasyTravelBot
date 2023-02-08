@@ -8,7 +8,7 @@ from settings import ECHO_MESSAGE, logger
 __all__ = ['display_results']
 
 
-def display_results(user_id: int, request: dict = None) -> None:
+def display_results(user_id: int, request: dict) -> None:
     """
     Функция получает от API список отелей,
     для каждого отеля формирует данные, выводимые в чат бота
