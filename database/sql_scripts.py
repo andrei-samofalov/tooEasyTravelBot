@@ -70,3 +70,10 @@ WHERE user_id = ?
 ORDER BY id DESC 
 LIMIT ?;
 """
+
+GET_LAST_REQUEST = """
+SELECT * FROM sessions
+WHERE user_id = ?
+ORDER BY id DESC 
+LIMIT 1;
+"""

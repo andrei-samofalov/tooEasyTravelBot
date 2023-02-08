@@ -92,3 +92,9 @@ def is_user_in_database(c: sqlite3.Cursor, user_id: int) -> bool:
         (user_id,)
     )
     return c.fetchone()[0]
+
+
+@db_touch
+def get_last_request(c: sqlite3.Cursor, user_id: int) -> tuple:
+    c.execute(sql.GET_LAST_REQUEST, (user_id,))
+    return c.fetchone()

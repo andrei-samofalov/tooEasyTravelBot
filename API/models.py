@@ -1,14 +1,16 @@
 import multiprocessing
 import threading
+from dataclasses import dataclass
+from datetime import datetime, date
 from typing import Any
 
 from jsonpointer import JsonPointerException, resolve_pointer
 
-from API.get_details_request import get_hotel_details
 from API.api_functions import photos_output
+from API.get_details_request import get_hotel_details
 from settings import logger
 
-__all__ = ['Hotel']
+__all__ = ['Hotel', 'HotelsRequest']
 
 
 class Hotel(threading.Thread):
@@ -95,6 +97,30 @@ class Hotel(threading.Thread):
         self._struct_data['Address'] = resolve_pointer(self._more_data, self._ADD_POINTS['address'])
 
 
+@dataclass
 class HotelsRequest:
-    def __init__(self):
-        pass
+    _id: int
+    _userID: int
+    _command: str
+    _query_time: str
+    _regionID: str
+    _city: str
+    _checkIN: str | date
+    _checkOUT: str | date
+    _hotelsAmount: int
+    _photosAmount: int | None
+
+    def _resolve_date(self):
+        self._checkIN = datetime.strptime(self._checkIN, "%Y-%m-%d").date()
+        self._checkOUT = datetime.strptime(self._checkOUT, "%Y-%m-%d").date()
+
+    def as_dict(self):
+        self._resolve_date()
+        return {
+            "region_id": self._regionID,
+            "check_in": self._checkIN,
+            "check_out": self._checkOUT,
+            "hotels_amount": self._hotelsAmount,
+            "command": self._command,
+            "photos_amount": self._photosAmount
+        }

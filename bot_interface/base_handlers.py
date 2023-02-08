@@ -36,3 +36,19 @@ def bot_help(message: Message):
 def bot_setting_up(message: Message):
     bot.send_message(message.from_user.id, 'Команда в разработке')
     bot.set_state(message.from_user.id, SurveyStates.echo)
+
+
+@bot.message_handler(commands=['state'])
+def bot_setting_up(message: Message):
+    curr_state = bot.get_state(message.from_user.id)
+    bot.send_message(message.from_user.id, f'{curr_state}')
+    bot.set_state(message.from_user.id, SurveyStates.echo)
+
+
+@bot.message_handler(commands=['repeat'])
+def keyboard_listen(message: Message):
+    if last_request := get_last_request(message.from_user.id):
+        request = HotelsRequest(*last_request)
+        display_results(user_id=message.from_user.id, request=request.as_dict())
+    else:
+        bot.send_message(message.from_user.id, 'Вы еще ничего не искали.')
