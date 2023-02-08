@@ -37,9 +37,9 @@ def display_results(user_id: int, request: dict) -> None:
         hotel.join()
 
         if photos:
-            hotel_hotel_and_photos = hotel.display_with_photos(photos)
+            hotel_and_photos = hotel.display_with_photos(photos)
             logger.debug(f'{hotel.name}: starting sending messages after {time.time() - start:.3} sec')
-            bot.send_media_group(chat_id=user_id, media=hotel_hotel_and_photos)
+            bot.send_media_group(chat_id=user_id, media=hotel_and_photos)
             continue
 
         display_hotel: str = hotel.display_data()
