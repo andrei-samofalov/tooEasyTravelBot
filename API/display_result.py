@@ -34,12 +34,12 @@ def display_results(user_id: int, request: dict) -> None:
         return
 
     for hotel in results:
-        hotel.join()
 
         if photos:
             hotel_and_photos = hotel.display_with_photos(photos)
             logger.debug(f'{hotel.name}: starting sending messages after {time.time() - start:.3} sec')
             bot.send_media_group(chat_id=user_id, media=hotel_and_photos)
+            time.sleep(0.5)
             continue
 
         display_hotel: str = hotel.display_data()
@@ -48,6 +48,7 @@ def display_results(user_id: int, request: dict) -> None:
             chat_id=user_id,
             text=display_hotel,
             disable_web_page_preview=True)
+        time.sleep(0.5)
 
     else:
         logger.info(f'All results have been displayed after {time.time() - start:.3} sec')

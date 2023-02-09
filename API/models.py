@@ -13,7 +13,7 @@ from settings import logger
 __all__ = ['Hotel', 'HotelsRequest']
 
 
-class Hotel(threading.Thread):
+class Hotel:
     _POINTS = {
         'id': '/id',
         'Name': '/name',
@@ -38,32 +38,23 @@ class Hotel(threading.Thread):
     _msg_with_images: list
     _images_url: list
 
-    def __init__(self,
-                 hotel_data: dict,
-                 sem1: threading.BoundedSemaphore,
-                 sem2: multiprocessing.Semaphore) -> None:
+    def __init__(self, hotel_data: dict) -> None:
         super().__init__()
 
         self._id = hotel_data['id']
         self.name = f"Hotel ID.{self._id}"
         self._data = hotel_data
-        self._sem1 = sem1
-        self._sem2 = sem2
-        self.start()
 
-    def run(self) -> None:
-        with self._sem1:
-            self._more_data = self._get_additional_hotel_data()
-        with self._sem2:
-            self._struct_data = self._resolve_data()
-            logger.debug(f'{self.name}: data resolved')
-            try:
-                self._resolve_address()
-                logger.debug(f'{self.name}: address resolved')
-                self._resolve_images()
-            except JsonPointerException as ex:
-                logger.error(f'{self.name}: unable to resolve; {ex.args}')
-                self.join()
+    def resolve(self) -> None:
+        self._more_data = self._get_additional_hotel_data()
+        self._struct_data = self._resolve_data()
+        logger.debug(f'{self.name}: data resolved')
+        try:
+            self._resolve_address()
+            logger.debug(f'{self.name}: address resolved')
+            self._resolve_images()
+        except JsonPointerException as ex:
+            logger.error(f'{self.name}: unable to resolve; {ex.args}')
 
     def display_data(self) -> str:
         return "\n".join(
