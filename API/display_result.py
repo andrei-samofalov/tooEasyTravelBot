@@ -22,7 +22,6 @@ def display_results(user_id: int, request: dict) -> None:
                      text='Ваш запрос обрабатывается...')
 
     start = time.time()
-    logger.debug('Pulling hotels info from API')
     results: [Hotel] = hotel_search_v2(**request)
     photos = request.get('photos_amount')
 
@@ -39,7 +38,7 @@ def display_results(user_id: int, request: dict) -> None:
             hotel_and_photos = hotel.display_with_photos(photos)
             logger.debug(f'{hotel.name}: starting sending messages after {time.time() - start:.3} sec')
             bot.send_media_group(chat_id=user_id, media=hotel_and_photos)
-            time.sleep(0.5)
+            time.sleep(1)
             continue
 
         display_hotel: str = hotel.display_data()
@@ -48,7 +47,7 @@ def display_results(user_id: int, request: dict) -> None:
             chat_id=user_id,
             text=display_hotel,
             disable_web_page_preview=True)
-        time.sleep(0.5)
+        time.sleep(1)
 
     else:
         logger.info(f'All results have been displayed after {time.time() - start:.3} sec')
