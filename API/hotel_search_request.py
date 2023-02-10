@@ -63,8 +63,8 @@ def hotel_search_v2(region_id: str, check_in: date, check_out: date,
         try:
             hotels = response.json()['data']['propertySearch']['properties']
 
-            hotels = [Hotel(h) for h in hotels]
-            yield from pool.map(resolve, hotels)
+            hotels = (Hotel(h) for h in hotels)
+            yield from pool.imap(resolve, hotels)
 
             logger.info(f'All hotels are done with generate data')
 
