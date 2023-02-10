@@ -1,3 +1,4 @@
+import time
 from datetime import date
 from http import HTTPStatus
 from multiprocessing.pool import ThreadPool
@@ -52,7 +53,10 @@ def hotel_search_v2(region_id: str, check_in: date, check_out: date,
             "min": 1
         }}
     }
+    start = time.time()
+    logger.debug('Pulling hotels info from API')
     response = requests.request("POST", url_hotel_v2, json=payload, headers=headers)
+    logger.debug(f'Got hotels info from API after {time.time() - start:.3} sec')
 
     if response.status_code == HTTPStatus.OK:
 
