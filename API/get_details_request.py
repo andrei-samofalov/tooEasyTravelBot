@@ -20,7 +20,7 @@ def get_hotel_details(hotel_id: int) -> dict:
     }
     logger.debug(f'Hotel ID.{hotel_id}: additional data requested')
     start = time.time()
-    req = requests.request("POST", url_hotel_details, json=payload, headers=headers).json()
+    req = requests.post(url_hotel_details, json=payload, headers=headers, timeout=5).json()
 
     logger.debug(f'Hotel ID.{hotel_id}: additional data received after {time.time() - start:.3} sec')
     return req

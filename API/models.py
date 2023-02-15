@@ -52,7 +52,7 @@ class Hotel:
         self.name = f"Hotel ID.{self._id}"
         self._data = hotel_data
 
-    def resolve(self) -> None:
+    def resolve(self) -> 'Hotel':
         self._more_data = self._get_additional_hotel_data()
         self._struct_data = self._resolve_data()
         logger.debug(f'{self.name}: data resolved')
@@ -62,6 +62,8 @@ class Hotel:
             self._resolve_images()
         except JsonPointerException as ex:
             logger.error(f'{self.name}: unable to resolve; {ex.args}')
+
+        return self
 
     def display_data(self) -> str:
         return "\n".join(

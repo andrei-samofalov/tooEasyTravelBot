@@ -21,7 +21,8 @@ def city_input(message: Message) -> None:
     bot.set_state(message.from_user.id, SurveyStates.city_input)
     with bot.retrieve_data(message.from_user.id) as request_dict:
         request_dict['command'] = message.text
-        logger.debug(f'command: {message.text}')
+
+    logger.debug(f'command: {message.text}')
 
 
 @bot.message_handler(state=SurveyStates.city_input)
@@ -214,13 +215,14 @@ def get_photo(call: CallbackQuery) -> None:
 
         with bot.retrieve_data(call.from_user.id) as request_dict:
             request_dict['photos_amount'] = 0
-            add_request_to_db(
-                user_id=call.from_user.id,
-                timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
-                request_dict=request_dict)
-            logger.info(f'Request from {call.from_user.id} recorded to DB')
 
-            display_results(user_id=call.from_user.id, request=request_dict)
+        add_request_to_db(
+            user_id=call.from_user.id,
+            timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
+            request_dict=request_dict)
+        logger.info(f'Request from {call.from_user.id} recorded to DB')
+
+        display_results(user_id=call.from_user.id, request=request_dict)
 
 
 @bot.message_handler(state=SurveyStates.amount_of_photos)
@@ -233,15 +235,15 @@ def get_photo_amount(message: Message) -> None:
         with bot.retrieve_data(message.from_user.id) as request_dict:
             request_dict['photos_amount'] = int(message.text)
 
-            add_request_to_db(
-                user_id=message.from_user.id,
-                timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
-                request_dict=request_dict)
-            logger.info(f'Request from {message.from_user.id} recorded to DB')
+        add_request_to_db(
+            user_id=message.from_user.id,
+            timestamp=time.strftime('%Y-%m-%d %H:%M:%S'),
+            request_dict=request_dict)
+        logger.info(f'Request from {message.from_user.id} recorded to DB')
 
-            bot.set_state(message.from_user.id, SurveyStates.echo)
-            display_results(user_id=message.from_user.id,
-                            request=request_dict)
+        bot.set_state(message.from_user.id, SurveyStates.echo)
+        display_results(user_id=message.from_user.id,
+                        request=request_dict)
 
     else:
         bi.trash_message(bot, message)

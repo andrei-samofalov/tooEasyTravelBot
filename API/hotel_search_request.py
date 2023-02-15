@@ -12,11 +12,6 @@ __all__ = ['hotel_search_v2']
 pool = ThreadPool(5)
 
 
-def resolve(hotel: Hotel) -> Hotel:
-    hotel.resolve()
-    return hotel
-
-
 def hotel_search_v2(region_id: str, check_in: date, check_out: date,
                     hotels_amount: int, command: str, **kwargs) -> [Hotel]:
     """
@@ -69,8 +64,8 @@ def hotel_search_v2(region_id: str, check_in: date, check_out: date,
         try:
             hotels = response.json()['data']['propertySearch']['properties']
 
-            hotels = (Hotel(h) for h in hotels)
-            yield from pool.imap(resolve, hotels)
+            hotels_gen = (Hotel(h) for h in hotels)
+            yield from pool.imap(Hotel.resolve, hotels_gen)
 
             logger.info(f'All hotels are done with generate data')
 
