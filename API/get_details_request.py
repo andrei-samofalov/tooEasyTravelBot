@@ -6,6 +6,11 @@ from settings import headers, logger, url_hotel_details
 
 
 def get_hotel_details(hotel_id: int) -> dict:
+    """
+    Get hotel details from API
+    :param hotel_id: ID of hotel, which information is searching
+    :return: json-like Python dictionary
+    """
     payload = {
         "currency": "RUB",
         "eapid": 1,

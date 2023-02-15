@@ -21,6 +21,12 @@ def hotel_search_v2(region_id: str, check_in: date, check_out: date,
                     hotels_amount: int, command: str, **kwargs) -> [Hotel]:
     """
     Запрос к API сайта для получения списка отелей
+    :param region_id: ID региона поиска (города)
+    :param check_in: дата въезда
+    :param check_out: дата выезда
+    :param hotels_amount: количество отелей, которое необходимо отобразить
+    :param command: команда бота (использовалось в более ранних версиях для выбора сортировки)
+    :return: генератор отелей класса `Hotel`
     """
 
     payload = {

@@ -11,7 +11,7 @@ def city_search_v3(city: str) -> dict:
     """
     Запрос к API сайта для получения списка возможных совпадений по запросу города
     :param city: str, ID местоположения.
-    :return dict
+    :return: Python-словарь с данными о найденных городах
     """
     querystring = {"q": city, "locale": "ru_RU"}
     response = requests.request("GET", url_city_v3, headers=headers, params=querystring)

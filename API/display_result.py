@@ -14,8 +14,7 @@ def display_results(user_id: int, request: dict) -> None:
     для каждого отеля формирует данные, выводимые в чат бота
 
     :param user_id: ID пользователя
-    :param request: словарь с данными запроса
-    :return: None
+    :param request: Python-словарь с данными запроса
     """
 
     bot.send_message(chat_id=user_id,
