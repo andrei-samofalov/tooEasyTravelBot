@@ -13,9 +13,8 @@ def db_touch(func: callable):
         with sqlite3.Connection(DATABASE) as conn:
             cursor = conn.cursor()
 
-            res = func(cursor, *args, **kwargs)
+            yield func(cursor, *args, **kwargs)
             conn.commit()
-            return res
 
     return sql_function
 
