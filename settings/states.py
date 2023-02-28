@@ -10,3 +10,5 @@ class SurveyStates(StatesGroup):
     amount_of_photos = State()
     echo = State()
     history = State()
+
+    setup = State()
