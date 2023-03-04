@@ -1,5 +1,6 @@
 import os
 
+import sentry_sdk
 from dotenv import find_dotenv, load_dotenv
 
 __all__ = [
@@ -12,11 +13,15 @@ __all__ = [
     'DATE_CONFIG', 'sort_order',
 ]
 
-
 if not find_dotenv():
     exit('Переменные окружения не загружены, т.к. отсутствует файл .env')
 else:
     load_dotenv()
+
+sentry_sdk.init(
+    dsn=os.getenv('SENTRY'),
+    traces_sample_rate=1.0
+)
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 RAPID_API_KEY = os.getenv('RAPID_API_KEY')
