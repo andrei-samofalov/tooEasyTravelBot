@@ -1,6 +1,6 @@
 import os
 
-import sentry_sdk
+# import sentry_sdk
 from dotenv import find_dotenv, load_dotenv
 
 __all__ = [
@@ -18,10 +18,10 @@ if not find_dotenv():
 else:
     load_dotenv()
 
-sentry_sdk.init(
-    dsn=os.getenv('SENTRY'),
-    traces_sample_rate=1.0
-)
+# sentry_sdk.init(
+#     dsn=os.getenv('SENTRY'),
+#     traces_sample_rate=1.0
+# )
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 RAPID_API_KEY = os.getenv('RAPID_API_KEY')
