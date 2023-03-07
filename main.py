@@ -8,4 +8,4 @@ if __name__ == '__main__':
     base_commands(bot)
     bot.add_custom_filter(StateFilter(bot))
     logger.debug('Starting...')
-    bot.infinity_polling(logger_level='debug')
+    bot.infinity_polling(logger_level='debug,true')
