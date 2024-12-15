@@ -1,1 +1,3 @@
-from . import data_load
+from .sql_functions import *
+
+create_tables()
